@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function loadCompanies() {
         try {
-            const data = await fetchJSON('http://localhost:3001/api/companies');
+            const data = await fetchJSON('/api/companies');
             companySelect.innerHTML = '<option value="" disabled selected>Choose a company</option>';
             data.companies.forEach((c) => {
                 const opt = document.createElement('option');
@@ -21,6 +21,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 companySelect.appendChild(opt);
             });
             companySelect.disabled = false;
+            // Auto-select first company to show real values immediately
+            if (data.companies.length > 0) {
+                companySelect.value = data.companies[0];
+                const event = new Event('change');
+                companySelect.dispatchEvent(event);
+            }
         } catch (e) {
             console.error('Failed to load companies', e);
             const el = document.getElementById('load-error');
@@ -32,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
         topicSelect.disabled = true;
         topicSelect.innerHTML = '<option value="" disabled selected>Choose a topic</option>';
         try {
-            const data = await fetchJSON(`http://localhost:3001/api/companies/${encodeURIComponent(company)}/topics`);
+            const data = await fetchJSON(`/api/companies/${encodeURIComponent(company)}/topics`);
             data.topics.forEach((t) => {
                 const opt = document.createElement('option');
                 opt.value = t;
@@ -40,13 +46,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 topicSelect.appendChild(opt);
             });
             topicSelect.disabled = false;
+            // Auto-select first topic if available
+            if (data.topics.length > 0) {
+                topicSelect.value = data.topics[0];
+                const event = new Event('change');
+                topicSelect.dispatchEvent(event);
+            }
         } catch (e) {
             console.error('Failed to load topics', e);
         }
     }
 
     function showPDF(company, topic) {
-        const url = `http://localhost:3001/api/companies/${encodeURIComponent(company)}/topics/${encodeURIComponent(topic)}/pdf`;
+        const url = `/api/companies/${encodeURIComponent(company)}/topics/${encodeURIComponent(topic)}/pdf`;
         pdfViewer.src = url;
         pdfContainer.classList.remove('hidden');
     }
