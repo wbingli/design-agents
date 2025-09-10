@@ -124,7 +124,7 @@ app.post('/api/prompts/:name', (req, res) => {
   }
 });
 
-// Run prompt (stub)
+// Run prompt (stub with file saving)
 app.post('/api/run/:name', (req, res) => {
   try {
     const name = path.basename(req.params.name);
@@ -132,12 +132,74 @@ app.post('/api/run/:name', (req, res) => {
     if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Prompt not found' });
     const promptText = fs.readFileSync(filePath, 'utf8');
     const parameters = req.body?.parameters ?? {};
+    
+    // For now, create a sample output file based on the prompt
+    if (name === 'generate-companies-ml-topics.md') {
+      const sampleOutput = [
+        {
+          "company_name": "Google",
+          "ml_topic": "Search Ranking",
+          "product_description": "Google Search uses ML ranking algorithms to order search results by relevance. ML engineers work on query understanding, page quality scoring, and personalization to improve search experience for billions of users."
+        },
+        {
+          "company_name": "Google",
+          "ml_topic": "Computer Vision",
+          "product_description": "Google Photos uses computer vision for automatic photo organization, face recognition, and object detection. ML engineers develop image classification models and object detection systems for smart photo management."
+        },
+        {
+          "company_name": "Google",
+          "ml_topic": "Natural Language Processing",
+          "product_description": "Google Translate uses NLP for real-time language translation. ML engineers work on neural machine translation, language detection, and context-aware translation models."
+        },
+        {
+          "company_name": "Meta",
+          "ml_topic": "News Feed Ranking",
+          "product_description": "Facebook News Feed uses ML to personalize content ranking. ML engineers develop algorithms for content scoring, user engagement prediction, and feed optimization for billions of users."
+        },
+        {
+          "company_name": "Meta",
+          "ml_topic": "Computer Vision",
+          "product_description": "Instagram uses computer vision for content moderation, image recognition, and AR filters. ML engineers work on object detection, face recognition, and real-time image processing."
+        },
+        {
+          "company_name": "Amazon",
+          "ml_topic": "Recommendation Systems",
+          "product_description": "Amazon's product recommendation engine drives 35% of revenue. ML engineers develop collaborative filtering, content-based filtering, and deep learning models for personalized product suggestions."
+        },
+        {
+          "company_name": "Amazon",
+          "ml_topic": "Computer Vision",
+          "product_description": "Amazon Go uses computer vision for cashier-less shopping. ML engineers work on object detection, tracking, and recognition systems for automated checkout."
+        },
+        {
+          "company_name": "Netflix",
+          "ml_topic": "Recommendation Systems",
+          "product_description": "Netflix's recommendation engine personalizes content discovery. ML engineers develop collaborative filtering, content-based filtering, and deep learning models to improve user engagement and retention."
+        },
+        {
+          "company_name": "Uber",
+          "ml_topic": "Ride Matching",
+          "product_description": "Uber's ride matching system connects riders with drivers in real-time. ML engineers work on geospatial algorithms, demand prediction, and optimization models for efficient matching."
+        },
+        {
+          "company_name": "Tesla",
+          "ml_topic": "Autonomous Driving",
+          "product_description": "Tesla's Autopilot uses computer vision and deep learning for autonomous driving. ML engineers develop neural networks for object detection, path planning, and decision-making systems."
+        }
+      ];
+      
+      const outputFile = parameters.output_file || 'content/companies-ml-topics.json';
+      const outputPath = path.join(projectRoot, outputFile);
+      fs.writeFileSync(outputPath, JSON.stringify(sampleOutput, null, 2), 'utf8');
+    }
+    
     res.json({
-      status: 'queued',
+      status: 'completed',
       prompt: name,
       parameters,
       preview: promptText.slice(0, 200),
-      note: 'Execution stub. Integrate with your LLM job runner later.'
+      output_file: parameters.output_file || 'content/companies-ml-topics.json',
+      note: 'Sample output generated. Integrate with your LLM job runner for real generation.'
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to run prompt', details: String(err) });

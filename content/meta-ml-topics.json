@@ -1,0 +1,110 @@
+[
+  {
+    "company_name": "Meta",
+    "ml_topic": "Design a News Feed ML Ranking System",
+    "interview_frequency": "Very High",
+    "product_description": "Design a machine learning system for Facebook News Feed ranking. Key ML challenges: real-time feature engineering, user engagement prediction models, content diversity optimization, A/B testing frameworks, and scaling ML models to billions of users. Discuss ML pipeline architecture, model serving, feature stores, and online learning systems."
+  },
+  {
+    "company_name": "Meta",
+    "ml_topic": "Design a Recommendation ML System",
+    "interview_frequency": "Very High",
+    "product_description": "Design a machine learning recommendation system for Instagram content discovery. Key ML challenges: cold start problem, real-time personalization, user behavior modeling, content understanding, and handling sparse data. Discuss collaborative filtering, content-based filtering, deep learning approaches, and ML model evaluation."
+  },
+  {
+    "company_name": "Meta",
+    "ml_topic": "Design a Computer Vision ML System",
+    "interview_frequency": "High",
+    "product_description": "Design a computer vision ML system for Instagram photo analysis and AR filters. Key ML challenges: real-time image processing, object detection, face recognition, style transfer, and mobile optimization. Discuss CNN architectures, model compression, edge deployment, and real-time inference optimization."
+  },
+  {
+    "company_name": "Meta",
+    "ml_topic": "Design a Natural Language Processing ML System",
+    "interview_frequency": "High",
+    "product_description": "Design an NLP ML system for Facebook content understanding and moderation. Key ML challenges: text classification, sentiment analysis, hate speech detection, multilingual processing, and real-time inference. Discuss transformer models, text preprocessing, model fine-tuning, and deployment strategies."
+  },
+  {
+    "company_name": "Meta",
+    "ml_topic": "Design a Content Moderation ML System",
+    "interview_frequency": "High",
+    "product_description": "Design an AI-powered content moderation ML system for Facebook/Instagram. Key ML challenges: multi-modal content analysis, real-time classification, human-in-the-loop learning, and policy adaptation. Discuss ensemble methods, active learning, human feedback integration, and model interpretability."
+  },
+  {
+    "company_name": "Meta",
+    "ml_topic": "Design a Friend Recommendation ML System",
+    "interview_frequency": "High",
+    "product_description": "Design a friend recommendation ML system for Facebook. Key ML challenges: social graph analysis, privacy-preserving ML, mutual connection modeling, and user engagement prediction. Discuss graph neural networks, federated learning, privacy-preserving techniques, and social network analysis."
+  },
+  {
+    "company_name": "Meta",
+    "ml_topic": "Design an Ad Targeting ML System",
+    "interview_frequency": "High",
+    "product_description": "Design an ML system for Facebook/Instagram ad targeting and optimization. Key ML challenges: user profiling, conversion prediction, real-time bidding, privacy compliance, and multi-objective optimization. Discuss feature engineering, model interpretability, privacy-preserving ML, and online learning."
+  },
+  {
+    "company_name": "Meta",
+    "ml_topic": "Design a Video Understanding ML System",
+    "interview_frequency": "Medium",
+    "product_description": "Design a video understanding ML system for Facebook/Instagram videos. Key ML challenges: video content analysis, action recognition, scene understanding, real-time processing, and temporal modeling. Discuss 3D CNNs, video transformers, temporal feature extraction, and model optimization for video data."
+  },
+  {
+    "company_name": "Meta",
+    "ml_topic": "Design a Language Translation ML System",
+    "interview_frequency": "Medium",
+    "product_description": "Design a machine learning translation system for Facebook posts and comments. Key ML challenges: neural machine translation, context understanding, slang detection, real-time inference, and supporting 100+ languages. Discuss transformer architectures, multilingual models, model compression, and serving optimization."
+  },
+  {
+    "company_name": "Meta",
+    "ml_topic": "Design a Face Recognition ML System",
+    "interview_frequency": "Medium",
+    "product_description": "Design a face recognition ML system for Facebook photos. Key ML challenges: face detection, feature extraction, identity verification, privacy protection, and real-time processing. Discuss deep learning models, face embedding techniques, privacy-preserving ML, and model optimization."
+  },
+  {
+    "company_name": "Meta",
+    "ml_topic": "Design a Story Ranking ML System",
+    "interview_frequency": "Medium",
+    "product_description": "Design an ML system for Instagram Stories ranking and personalization. Key ML challenges: ephemeral content modeling, real-time ranking, user engagement prediction, and content freshness. Discuss time-series modeling, ranking algorithms, feature engineering, and real-time ML serving."
+  },
+  {
+    "company_name": "Meta",
+    "ml_topic": "Design a Group Recommendation ML System",
+    "interview_frequency": "Medium",
+    "product_description": "Design an ML recommendation system for Facebook Groups. Key ML challenges: group dynamics modeling, multi-user recommendation, content diversity, and group engagement prediction. Discuss multi-task learning, group modeling, collaborative filtering, and recommendation evaluation."
+  },
+  {
+    "company_name": "Meta",
+    "ml_topic": "Design a Sentiment Analysis ML System",
+    "interview_frequency": "Medium",
+    "product_description": "Design a sentiment analysis ML system for Facebook posts and comments. Key ML challenges: multilingual sentiment analysis, context understanding, emoji interpretation, and real-time processing. Discuss transformer models, text preprocessing, model fine-tuning, and deployment strategies."
+  },
+  {
+    "company_name": "Meta",
+    "ml_topic": "Design a Event Recommendation ML System",
+    "interview_frequency": "Low",
+    "product_description": "Design an ML recommendation system for Facebook Events. Key ML challenges: location-based recommendations, time sensitivity modeling, user interest prediction, and event popularity forecasting. Discuss geospatial ML, temporal modeling, recommendation algorithms, and feature engineering."
+  },
+  {
+    "company_name": "Meta",
+    "ml_topic": "Design a Marketplace Search ML System",
+    "interview_frequency": "Low",
+    "product_description": "Design an ML-powered search system for Facebook Marketplace. Key ML challenges: product understanding, relevance ranking, image-based search, and fraud detection. Discuss multimodal learning, ranking models, content understanding, and ML-based fraud detection."
+  },
+  {
+    "company_name": "Meta",
+    "ml_topic": "Design a Dating Matching ML System",
+    "interview_frequency": "Low",
+    "product_description": "Design an ML matching system for Facebook Dating. Key ML challenges: compatibility scoring, preference modeling, privacy-preserving matching, and user safety. Discuss recommendation algorithms, privacy-preserving ML, user preference modeling, and matching optimization."
+  },
+  {
+    "company_name": "Meta",
+    "ml_topic": "Design a Live Video Analysis ML System",
+    "interview_frequency": "Low",
+    "product_description": "Design an ML system for real-time analysis of Facebook Live videos. Key ML challenges: real-time video processing, content classification, live moderation, and quality assessment. Discuss real-time ML inference, video analysis models, streaming ML, and edge computing."
+  },
+  {
+    "company_name": "Meta",
+    "ml_topic": "Design a Voice Processing ML System",
+    "interview_frequency": "Low",
+    "product_description": "Design an ML system for voice processing in Facebook/Instagram voice messages. Key ML challenges: speech recognition, voice synthesis, noise reduction, and real-time processing. Discuss speech processing models, audio feature extraction, model optimization, and real-time inference."
+  }
+]
