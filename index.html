@@ -3,73 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Design</title>
+    <title>Machine Learning System Design Learning</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="main-container">
-            <h1 class="main-title">System Design</h1>
+            <h1 class="main-title">Machine Learning System Design Learning</h1>
             
             <div class="content-wrapper">
                 <div class="sidebar">
                     <div class="company-section">
-                        <h3>Meta</h3>
-                        <ul class="topic-list">
-                            <li class="topic-item" data-company="meta" data-topic="news-feed">News Feed</li>
-                            <li class="topic-item" data-company="meta" data-topic="chat-system">Chat System</li>
-                            <li class="topic-item" data-company="meta" data-topic="live-streaming">Live Streaming</li>
-                        </ul>
+                        <h3>Select Company</h3>
+                        <select id="company-select" class="selector">
+                            <option value="" disabled selected>Choose a company</option>
+                        </select>
                     </div>
-                    
                     <div class="company-section">
-                        <h3>Google</h3>
-                        <ul class="topic-list">
-                            <li class="topic-item" data-company="google" data-topic="search-engine">Search Engine</li>
-                            <li class="topic-item" data-company="google" data-topic="youtube">YouTube</li>
-                            <li class="topic-item" data-company="google" data-topic="maps">Maps</li>
-                        </ul>
+                        <h3>Select Topic</h3>
+                        <select id="topic-select" class="selector" disabled>
+                            <option value="" disabled selected>Choose a topic</option>
+                        </select>
                     </div>
-                    
-                    <div class="company-section">
-                        <h3>Amazon</h3>
-                        <ul class="topic-list">
-                            <li class="topic-item" data-company="amazon" data-topic="e-commerce">E-commerce Platform</li>
-                            <li class="topic-item" data-company="amazon" data-topic="aws-s3">AWS S3</li>
-                            <li class="topic-item" data-company="amazon" data-topic="recommendation">Recommendation System</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="company-section">
-                        <h3>Netflix</h3>
-                        <ul class="topic-list">
-                            <li class="topic-item" data-company="netflix" data-topic="video-streaming">Video Streaming</li>
-                            <li class="topic-item" data-company="netflix" data-topic="content-delivery">Content Delivery</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="company-section">
-                        <h3>Uber</h3>
-                        <ul class="topic-list">
-                            <li class="topic-item" data-company="uber" data-topic="ride-matching">Ride Matching</li>
-                            <li class="topic-item" data-company="uber" data-topic="surge-pricing">Surge Pricing</li>
-                        </ul>
+                    <div class="hint">
+                        <p>Companies and topics are read from the <code>content/</code> directory.</p>
+                        <p id="load-error" style="color:#b00020; font-size:12px; display:none; margin: 5px 20px 0 20px;">Failed to load companies. Is the backend running?</p>
                     </div>
                 </div>
                 
                 <div class="main-content">
                     <div id="content-area">
                         <div class="welcome-message">
-                            <h2>Welcome to System Design Explorer</h2>
-                            <p>Click on any topic from the left sidebar to learn about system design patterns used by major tech companies.</p>
-                            <div class="features">
-                                <h3>What you'll learn:</h3>
-                                <ul>
-                                    <li>High-level architecture patterns</li>
-                                    <li>Scalability considerations</li>
-                                    <li>Database design choices</li>
-                                    <li>Performance optimization strategies</li>
-                                </ul>
-                            </div>
+                            <h2>Welcome</h2>
+                            <p>Select a company and topic to display the machine learning system design PDF.</p>
+                        </div>
+                        <div id="pdf-container" class="pdf-container hidden">
+                            <iframe id="pdf-viewer" title="PDF Viewer" frameborder="0"></iframe>
                         </div>
                     </div>
                 </div>

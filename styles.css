@@ -41,6 +41,21 @@ body {
     height: fit-content;
 }
 
+.selector {
+    width: calc(100% - 40px);
+    margin: 15px 20px;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+}
+
+.hint {
+    padding: 10px 20px 20px 20px;
+    color: #777;
+    font-size: 12px;
+}
+
 .company-section {
     border-bottom: 1px solid #ddd;
 }
@@ -142,6 +157,25 @@ body {
 
 .system-design-content.active {
     display: block;
+}
+
+.pdf-container {
+    margin-top: 10px;
+    width: 100%;
+    height: 70vh;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.pdf-container.hidden {
+    display: none;
+}
+
+#pdf-viewer {
+    width: 100%;
+    height: 100%;
 }
 
 .system-design-content h2 {
