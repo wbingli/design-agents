@@ -1,0 +1,20 @@
+flowchart LR
+  A[User Device] --> B[API Gateway]
+  B --> C[Feature Service]
+  C --> D[(Feature Store)]
+  B --> E[Ranking Service]
+  E --> G[(Redis Cache)]
+  E --> H[Inference Engine]
+  H --> I[(GPU/CPU Nodes)]
+  E --> F[(Model Store)]
+  B --> J[Response]
+
+  subgraph Data Pipeline
+    K[Kafka Streams] --> L[Stream Processing (Flink/Spark)]
+    L --> M[Feature Engineering]
+    M --> D
+    L --> N[Training Data]
+    N --> O[Model Training]
+    O --> F
+  end
+
