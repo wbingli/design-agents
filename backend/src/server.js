@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '../../');
+const publicDir = path.join(projectRoot, 'public');
 const promptsDir = path.join(projectRoot, 'prompts');
 const contentDir = path.join(projectRoot, 'content');
 
@@ -24,8 +25,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '2mb' }));
 app.use(morgan('dev'));
-// Serve static frontend so it shares origin with the API
-app.use(express.static(projectRoot));
+// Serve static files from public directory
+app.use(express.static(publicDir));
 
 // Health check
 app.get('/api/health', (req, res) => {
