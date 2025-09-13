@@ -7,41 +7,66 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="main-container">
-            <h1 class="main-title">Machine Learning System Design Learning</h1>
-            
-            <div class="content-wrapper">
-                <div class="sidebar">
-                    <div class="company-section">
-                        <h3>Select Company</h3>
-                        <select id="company-select" class="selector">
-                            <option value="" disabled selected>Choose a company</option>
-                        </select>
+    <div class="page-container">
+        <header class="page-header">
+            <h1 class="page-title">Machine Learning System Design Learning</h1>
+            <p class="page-subtitle">Select a company and topic to learn machine learning system design</p>
+        </header>
+
+        <main class="main-layout">
+            <aside class="sidebar">
+                <div class="form-section">
+                    <h2 class="form-label">Select Company</h2>
+                    <select id="company-select" class="form-select">
+                        <option value="" disabled selected>Please select company...</option>
+                    </select>
+                </div>
+
+                <div class="form-section">
+                    <h2 class="form-label">Select Topic</h2>
+                    <select id="topic-select" class="form-select" disabled>
+                        <option value="" disabled selected>Please select company first...</option>
+                    </select>
+                </div>
+
+                <div class="selection-card">
+                    <h3 class="card-header">Selected</h3>
+                    <button id="clear-btn" class="clear-link">Clear Selection</button>
+                    
+                    <div class="selection-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Company:</span>
+                            <span id="selected-company" class="detail-value">Not selected</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Topic:</span>
+                            <span id="selected-topic" class="detail-value">Not selected</span>
+                        </div>
                     </div>
-                    <div class="company-section">
-                        <h3>Select Topic</h3>
-                        <select id="topic-select" class="selector" disabled>
-                            <option value="" disabled selected>Choose a topic</option>
-                        </select>
-                    </div>
-                    <div class="hint">
-                        <p>Companies and topics are read from the <code>content/</code> directory.</p>
-                        <p id="load-error" style="color:#b00020; font-size:12px; display:none; margin: 5px 20px 0 20px;">Failed to load companies. Is the backend running?</p>
+
+                    <div class="button-row">
+                        <button id="view-pdf-btn" class="btn btn-primary" disabled>View PDF</button>
+                        <button id="download-pdf-btn" class="btn btn-secondary" disabled>Download PDF</button>
                     </div>
                 </div>
-                
-                <div class="main-content">
-                    <div id="content-area">
-                        <div class="welcome-message">
-                            <h2>Welcome</h2>
-                            <p>Select a company and topic to display the machine learning system design PDF.</p>
-                        </div>
-                        <div id="pdf-container" class="pdf-container hidden">
-                            <iframe id="pdf-viewer" title="PDF Viewer" frameborder="0"></iframe>
-                        </div>
+            </aside>
+
+            <section class="content-area">
+                <h3 class="content-header">Machine Learning System Design PDF</h3>
+                <div class="pdf-wrapper">
+                    <div class="welcome-message" id="welcome">
+                        <div class="loading-text">Loading PDF...</div>
+                    </div>
+                    <div id="pdf-container" class="pdf-container hidden">
+                        <iframe id="pdf-viewer" title="PDF Viewer" frameborder="0"></iframe>
                     </div>
                 </div>
-            </div>
+            </section>
+        </main>
+
+        <footer class="page-footer">
+            <p>© 2024 Machine Learning System Design Learning Platform. All rights reserved.</p>
+        </footer>
     </div>
     
     <script src="script.js"></script>
