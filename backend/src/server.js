@@ -62,6 +62,34 @@ app.get('/api/companies/:company/topics', (req, res) => {
   }
 });
 
+// ML Topics API endpoint
+app.get('/api/ml-topics', (req, res) => {
+  try {
+    const company = req.query.company;
+    const mlTopicsFile = path.join(projectRoot, 'content', 'meta-ml-topics.json');
+    
+    if (!fs.existsSync(mlTopicsFile)) {
+      return res.json({ topics: [] });
+    }
+    
+    const mlTopicsData = JSON.parse(fs.readFileSync(mlTopicsFile, 'utf8'));
+    
+    if (company) {
+      // Filter by company
+      const companyTopics = mlTopicsData
+        .filter(item => item.company_name.toLowerCase() === company.toLowerCase())
+        .map(item => item.ml_topic);
+      res.json({ topics: companyTopics });
+    } else {
+      // Return all unique topics
+      const allTopics = [...new Set(mlTopicsData.map(item => item.ml_topic))];
+      res.json({ topics: allTopics });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch ML topics', details: String(err) });
+  }
+});
+
 // Stream PDF under company/topic folder; assume a single PDF per topic folder
 app.get('/api/companies/:company/topics/:topic/pdf', (req, res) => {
   try {
