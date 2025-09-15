@@ -250,6 +250,12 @@ export default function Home() {
                     <h4 className="text-lg font-semibold text-gray-800">📄 {pdfFiles[0].name}</h4>
                     <div className="flex space-x-2">
                       <button
+                        onClick={() => window.location.reload()}
+                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        Refresh PDF
+                      </button>
+                      <button
                         onClick={() => downloadPDF(pdfFiles[0].url, pdfFiles[0].name)}
                         className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
                       >
@@ -261,9 +267,10 @@ export default function Home() {
                   {/* PDF Viewer */}
                   <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
                     <iframe
-                      src={pdfFiles[0].url}
+                      src={`${pdfFiles[0].url}?t=${Date.now()}`}
                       className="w-full h-[600px] border-0"
                       title={pdfFiles[0].name}
+                      key={`${pdfFiles[0].url}-${Date.now()}`}
                     />
                   </div>
                 </div>
