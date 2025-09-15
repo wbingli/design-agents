@@ -173,7 +173,7 @@ export default function Home() {
                    </svg>
                  </div>
                  <h1 className="text-3xl font-bold text-white">
-                   Machine Learning System Design Learning
+                   Machine Learning System Design Learning (Next.js)
                  </h1>
                </div>
                <p className="text-lg text-white max-w-2xl mx-auto">
