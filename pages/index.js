@@ -22,12 +22,12 @@ export default function Home() {
           const data = await response.json();
           setCompanies(data.companies || []);
         } else {
-          // Fallback to mock data if API fails
-          setCompanies(['Amazon', 'Google', 'Meta', 'Microsoft', 'Netflix']);
+          console.error('Failed to fetch companies:', response.status);
+          setCompanies([]);
         }
       } catch (error) {
         console.error('Error fetching companies:', error);
-        setCompanies(['Amazon', 'Google', 'Meta', 'Microsoft', 'Netflix']);
+        setCompanies([]);
       } finally {
         setApiLoading(false);
       }
@@ -45,26 +45,12 @@ export default function Home() {
         const data = await response.json();
         setTopics(data.topics || []);
       } else {
-        // Fallback to mock data
-        const mockTopics = {
-          'Amazon': ['Recommendation Systems', 'AWS ML Services', 'Alexa NLP'],
-          'Google': ['Search Ranking', 'YouTube Recommendations', 'Google Translate'],
-          'Meta': ['News Feed Ranking', 'Instagram ML', 'Facebook Ads'],
-          'Microsoft': ['Azure ML', 'Office Intelligence', 'Bing Search'],
-          'Netflix': ['Content Recommendations', 'Personalization', 'Content Analysis']
-        };
-        setTopics(mockTopics[company] || []);
+        console.error('Failed to fetch topics:', response.status);
+        setTopics([]);
       }
     } catch (error) {
       console.error('Error fetching topics:', error);
-      const mockTopics = {
-        'Amazon': ['Recommendation Systems', 'AWS ML Services', 'Alexa NLP'],
-        'Google': ['Search Ranking', 'YouTube Recommendations', 'Google Translate'],
-        'Meta': ['News Feed Ranking', 'Instagram ML', 'Facebook Ads'],
-        'Microsoft': ['Azure ML', 'Office Intelligence', 'Bing Search'],
-        'Netflix': ['Content Recommendations', 'Personalization', 'Content Analysis']
-      };
-      setTopics(mockTopics[company] || []);
+      setTopics([]);
     } finally {
       setApiLoading(false);
     }
