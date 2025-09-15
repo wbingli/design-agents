@@ -14,10 +14,10 @@ export default function Home() {
 
   // Fetch companies from API
   useEffect(() => {
-    const fetchCompanies = async () => {
-      try {
-        setApiLoading(true);
-        const response = await fetch('http://localhost:3001/api/companies');
+  const fetchCompanies = async () => {
+    try {
+      setApiLoading(true);
+      const response = await fetch('/api/companies');
         if (response.ok) {
           const data = await response.json();
           setCompanies(data.companies || []);
@@ -40,7 +40,7 @@ export default function Home() {
   const fetchTopics = async (company) => {
     try {
       setApiLoading(true);
-      const response = await fetch(`http://localhost:3001/api/ml-topics?company=${encodeURIComponent(company)}`);
+      const response = await fetch(`/api/ml-topics?company=${encodeURIComponent(company)}`);
       if (response.ok) {
         const data = await response.json();
         setTopics(data.topics || []);
@@ -74,7 +74,7 @@ export default function Home() {
   const fetchPDFs = async (company, topic) => {
     try {
       setApiLoading(true);
-      const response = await fetch(`http://localhost:3001/api/pdf-files?company=${encodeURIComponent(company)}&topic=${encodeURIComponent(topic)}`);
+      const response = await fetch(`/api/pdf-files?company=${encodeURIComponent(company)}&topic=${encodeURIComponent(topic)}`);
       if (response.ok) {
         const data = await response.json();
         const pdfs = data.pdfs || [];
@@ -126,12 +126,12 @@ export default function Home() {
   };
 
   const viewPDF = (pdfUrl) => {
-    window.open(`http://localhost:3001${pdfUrl}`, '_blank');
+    window.open(pdfUrl, '_blank');
   };
 
   const downloadPDF = (pdfUrl, filename) => {
     const link = document.createElement('a');
-    link.href = `http://localhost:3001${pdfUrl}`;
+    link.href = pdfUrl;
     link.download = filename;
     document.body.appendChild(link);
     link.click();
@@ -334,7 +334,7 @@ export default function Home() {
                   <h4 className="text-sm font-medium text-blue-800 mb-2">📄 PDF Content:</h4>
                   <div className="bg-white p-3 rounded border">
                     <iframe
-                      src={`http://localhost:3001${pdfFiles[0].url}`}
+                      src={pdfFiles[0].url}
                       className="w-full h-96 border-0 rounded"
                       title={pdfFiles[0].name}
                     />
@@ -382,7 +382,7 @@ export default function Home() {
                    {/* PDF Content */}
                    <div className="flex-1 p-4">
                      <iframe
-                       src={`http://localhost:3001${selectedPDF.url}`}
+                       src={selectedPDF.url}
                        className="w-full h-full border-0 rounded"
                        title={selectedPDF.name}
                      />
