@@ -28,6 +28,9 @@ app.use(morgan('dev'));
 // Serve static files from public directory
 app.use(express.static(publicDir));
 
+// Serve static files from content directory
+app.use('/content', express.static(contentDir));
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
@@ -62,31 +65,55 @@ app.get('/api/companies/:company/topics', (req, res) => {
   }
 });
 
-// ML Topics API endpoint
+// Enhanced ML Topics API endpoint - reads from folder structure
 app.get('/api/ml-topics', (req, res) => {
   try {
     const company = req.query.company;
-    const mlTopicsFile = path.join(projectRoot, 'content', 'meta-ml-topics.json');
+    const contentDir = path.join(projectRoot, 'content');
     
-    if (!fs.existsSync(mlTopicsFile)) {
+    if (!company) {
       return res.json({ topics: [] });
     }
     
-    const mlTopicsData = JSON.parse(fs.readFileSync(mlTopicsFile, 'utf8'));
+    const companyDir = path.join(contentDir, company);
     
-    if (company) {
-      // Filter by company
-      const companyTopics = mlTopicsData
-        .filter(item => item.company_name.toLowerCase() === company.toLowerCase())
-        .map(item => item.ml_topic);
-      res.json({ topics: companyTopics });
-    } else {
-      // Return all unique topics
-      const allTopics = [...new Set(mlTopicsData.map(item => item.ml_topic))];
-      res.json({ topics: allTopics });
+    if (!fs.existsSync(companyDir)) {
+      return res.json({ topics: [] });
     }
+    
+    // Read topic folders from company directory
+    const topicFolders = fs.readdirSync(companyDir, { withFileTypes: true })
+      .filter(dirent => dirent.isDirectory())
+      .map(dirent => dirent.name);
+    
+    res.json({ topics: topicFolders });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch ML topics', details: String(err) });
+    res.status(500).json({ error: 'Failed to fetch topics', details: String(err) });
+  }
+});
+
+// PDF Files API endpoint - discovers PDFs in topic folders
+app.get('/api/pdf-files', (req, res) => {
+  try {
+    const { company, topic } = req.query;
+    const topicDir = path.join(projectRoot, 'content', company, topic);
+    
+    if (!fs.existsSync(topicDir)) {
+      return res.json({ pdfs: [] });
+    }
+    
+    // Find all PDF files in topic directory
+    const pdfFiles = fs.readdirSync(topicDir)
+      .filter(file => file.toLowerCase().endsWith('.pdf'))
+      .map(file => ({
+        name: file,
+        path: path.join(topic, file),
+        url: `/content/${company}/${topic}/${file}`
+      }));
+    
+    res.json({ pdfs: pdfFiles });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch PDFs', details: String(err) });
   }
 });
 

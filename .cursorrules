@@ -1,0 +1,27 @@
+# Cursor Auto Mode Configuration
+# This file configures Cursor to run in fully automatic mode
+
+# Auto-execute commands without confirmation
+auto_execute: true
+confirm_commands: false
+auto_approve_tool_calls: true
+
+# Development workflow settings
+auto_start_servers: true
+auto_install_dependencies: true
+auto_fix_linting_errors: true
+
+# Testing and deployment
+auto_run_tests: true
+auto_deploy_on_save: false
+
+# Code generation settings
+auto_format_code: true
+auto_import_dependencies: true
+auto_complete_suggestions: true
+
+# Project-specific settings
+project_type: "nextjs"
+backend_port: 3001
+frontend_port: 3000
+auto_restart_on_changes: true

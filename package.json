@@ -9,7 +9,9 @@
     "start": "next start",
     "lint": "next lint",
     "dev-backend": "nodemon backend/src/server.js",
-    "start-backend": "NODE_ENV=production node backend/src/server.js"
+    "start-backend": "NODE_ENV=production node backend/src/server.js",
+    "auto-start": "node .cursor/auto-startup.js",
+    "auto-mode": "echo 'Auto mode enabled! Servers will start automatically.'"
   },
   "repository": {
     "type": "git",

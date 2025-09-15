@@ -1,0 +1,27 @@
+{
+  "cursor.autoMode": true,
+  "cursor.autoExecute": true,
+  "cursor.confirmCommands": false,
+  "cursor.autoApproveToolCalls": true,
+  "cursor.autoStartServers": true,
+  "cursor.autoInstallDependencies": true,
+  "cursor.autoFixLintingErrors": true,
+  "cursor.autoRunTests": true,
+  "cursor.autoFormatCode": true,
+  "cursor.autoImportDependencies": true,
+  "cursor.autoCompleteSuggestions": true,
+  "cursor.autoRestartOnChanges": true,
+  "cursor.developmentMode": {
+    "enabled": true,
+    "autoStartBackend": true,
+    "autoStartFrontend": true,
+    "backendPort": 3001,
+    "frontendPort": 3000
+  },
+  "cursor.projectSettings": {
+    "type": "nextjs",
+    "autoDeploy": false,
+    "autoTest": true,
+    "autoLint": true
+  }
+}

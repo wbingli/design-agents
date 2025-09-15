@@ -8,6 +8,9 @@ export default function Home() {
   const [selectedTopic, setSelectedTopic] = useState('');
   const [loading, setLoading] = useState(false);
   const [apiLoading, setApiLoading] = useState(false);
+  const [pdfFiles, setPdfFiles] = useState([]);
+  const [selectedPDF, setSelectedPDF] = useState(null);
+  const [showPDFViewer, setShowPDFViewer] = useState(false);
 
   // Fetch companies from API
   useEffect(() => {
@@ -67,6 +70,35 @@ export default function Home() {
     }
   };
 
+  // Fetch PDFs when both company and topic are selected
+  const fetchPDFs = async (company, topic) => {
+    try {
+      setApiLoading(true);
+      const response = await fetch(`http://localhost:3001/api/pdf-files?company=${encodeURIComponent(company)}&topic=${encodeURIComponent(topic)}`);
+      if (response.ok) {
+        const data = await response.json();
+        const pdfs = data.pdfs || [];
+        setPdfFiles(pdfs);
+        
+        // Automatically display the first PDF if available
+        if (pdfs.length > 0) {
+          setSelectedPDF(pdfs[0]);
+          setShowPDFViewer(true);
+        } else {
+          setSelectedPDF(null);
+          setShowPDFViewer(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching PDFs:', error);
+      setPdfFiles([]);
+      setSelectedPDF(null);
+      setShowPDFViewer(false);
+    } finally {
+      setApiLoading(false);
+    }
+  };
+
   const handleCompanyChange = (company) => {
     setSelectedCompany(company);
     setSelectedTopic('');
@@ -79,30 +111,41 @@ export default function Home() {
 
   const handleTopicChange = (topic) => {
     setSelectedTopic(topic);
+    if (selectedCompany && topic) {
+      fetchPDFs(selectedCompany, topic);
+    }
   };
 
   const clearSelection = () => {
     setSelectedCompany('');
     setSelectedTopic('');
     setTopics([]);
+    setPdfFiles([]);
+    setSelectedPDF(null);
+    setShowPDFViewer(false);
   };
 
-  const viewPDF = () => {
-    if (selectedCompany && selectedTopic) {
-      setLoading(true);
-      // Simulate PDF loading
-      setTimeout(() => {
-        alert(`Viewing PDF for ${selectedCompany} - ${selectedTopic}`);
-        setLoading(false);
-      }, 1000);
-    }
+  const viewPDF = (pdfUrl) => {
+    window.open(`http://localhost:3001${pdfUrl}`, '_blank');
   };
 
-  const downloadPDF = () => {
-    if (selectedCompany && selectedTopic) {
-      // Simulate PDF download
-      alert(`Downloading PDF for ${selectedCompany} - ${selectedTopic}`);
-    }
+  const downloadPDF = (pdfUrl, filename) => {
+    const link = document.createElement('a');
+    link.href = `http://localhost:3001${pdfUrl}`;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const selectPDF = (pdf) => {
+    setSelectedPDF(pdf);
+    setShowPDFViewer(true);
+  };
+
+  const closePDFViewer = () => {
+    setShowPDFViewer(false);
+    setSelectedPDF(null);
   };
 
   return (
@@ -130,12 +173,12 @@ export default function Home() {
                    </svg>
                  </div>
                  <h1 className="text-3xl font-bold text-white">
-                   机器学习系统设计学习
+                   Machine Learning System Design Learning
                  </h1>
                </div>
-          <p className="text-lg text-white max-w-2xl mx-auto">
-            选择公司和主题来学习机器学习系统设计
-          </p>
+               <p className="text-lg text-white max-w-2xl mx-auto">
+                  Select a company and topic to learn machine learning system design
+               </p>
         </div>
 
              {/* Main Content Area */}
@@ -152,7 +195,7 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </div>
-                <h2 className="text-lg font-semibold text-gray-800">选择公司</h2>
+                     <h2 className="text-lg font-semibold text-gray-800">Select Company</h2>
               </div>
               <hr className="border-gray-200 mb-4" />
               <select
@@ -180,7 +223,7 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <h2 className="text-lg font-semibold text-gray-800">选择主题</h2>
+                     <h2 className="text-lg font-semibold text-gray-800">Select Topic</h2>
               </div>
               <hr className="border-gray-200 mb-4" />
               <select
@@ -210,7 +253,7 @@ export default function Home() {
                  <div className="flex justify-center">
                    <div className="bg-white rounded-2xl shadow-lg p-4 w-full max-w-4xl">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-semibold text-gray-800">已选择</h3>
+                <h3 className="text-lg font-semibold text-gray-800">Selected</h3>
                 <button
                   onClick={clearSelection}
                   className="flex items-center px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium"
@@ -218,53 +261,157 @@ export default function Home() {
                   <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                  清除选择
+                  Clear Selection
                 </button>
               </div>
               <hr className="border-gray-200 mb-3" />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">公司:</p>
+                  <p className="text-sm text-gray-600 mb-1">Company:</p>
                   <p className="text-lg font-semibold text-gray-800">
                     {selectedCompany || 'Not selected'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">主题:</p>
+                  <p className="text-sm text-gray-600 mb-1">Topic:</p>
                   <p className="text-lg font-semibold text-gray-800">
                     {selectedTopic || 'Not selected'}
                   </p>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <button
-                  onClick={viewPDF}
-                  disabled={!selectedCompany || !selectedTopic || loading}
-                  className="w-full flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  {loading ? 'Loading...' : '查看 PDF'}
-                </button>
-                <button
-                  onClick={downloadPDF}
-                  disabled={!selectedCompany || !selectedTopic}
-                  className="w-full flex items-center justify-center px-4 py-3 bg-white text-blue-600 border border-blue-600 rounded-lg font-medium hover:bg-blue-50 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  下载 PDF
-                </button>
-              </div>
+              {/* PDF Files Display */}
+              {selectedCompany && selectedTopic && pdfFiles.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Available PDFs:</h4>
+                  <div className="space-y-2">
+                    {pdfFiles.map((pdf, index) => (
+                      <div key={index} className={`flex items-center justify-between p-2 rounded cursor-pointer transition-colors ${
+                        selectedPDF && selectedPDF.name === pdf.name 
+                          ? 'bg-blue-100 border border-blue-300' 
+                          : 'bg-gray-50 hover:bg-gray-100'
+                      }`}>
+                        <span 
+                          className="text-sm text-gray-600 flex-1"
+                          onClick={() => selectPDF(pdf)}
+                        >
+                          {pdf.name}
+                          {selectedPDF && selectedPDF.name === pdf.name && (
+                            <span className="ml-2 text-blue-600 text-xs">(Currently viewing)</span>
+                          )}
+                        </span>
+                        <div className="space-x-2">
+                          <button
+                            onClick={() => selectPDF(pdf)}
+                            className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                          >
+                            {selectedPDF && selectedPDF.name === pdf.name ? 'Viewing' : 'View'}
+                          </button>
+                          <button
+                            onClick={() => downloadPDF(pdf.url, pdf.name)}
+                            className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                          >
+                            Download
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Show message when no PDFs are available */}
+              {selectedCompany && selectedTopic && pdfFiles.length === 0 && !apiLoading && (
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                  <p className="text-sm text-yellow-700">No PDF files found for this topic.</p>
+                </div>
+              )}
+
+              {/* Simple PDF Display */}
+              {selectedCompany && selectedTopic && pdfFiles.length > 0 && (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded">
+                  <h4 className="text-sm font-medium text-blue-800 mb-2">📄 PDF Content:</h4>
+                  <div className="bg-white p-3 rounded border">
+                    <iframe
+                      src={`http://localhost:3001${pdfFiles[0].url}`}
+                      className="w-full h-96 border-0 rounded"
+                      title={pdfFiles[0].name}
+                    />
+                  </div>
+                  <div className="mt-2 flex space-x-2">
+                    <button
+                      onClick={() => downloadPDF(pdfFiles[0].url, pdfFiles[0].name)}
+                      className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                    >
+                      Download PDF
+                    </button>
+                  </div>
+                </div>
+              )}
                    </div>
                  </div>
                </div>
              </div>
+
+             {/* PDF Viewer Modal */}
+             {showPDFViewer && selectedPDF && (
+               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                 <div className="bg-white rounded-lg shadow-xl max-w-6xl max-h-[90vh] w-full flex flex-col">
+                   {/* PDF Viewer Header */}
+                   <div className="flex items-center justify-between p-4 border-b">
+                     <h3 className="text-lg font-semibold text-gray-800">
+                       {selectedPDF.name}
+                     </h3>
+                     <div className="flex items-center space-x-2">
+                       <button
+                         onClick={() => downloadPDF(selectedPDF.url, selectedPDF.name)}
+                         className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                       >
+                         Download
+                       </button>
+                       <button
+                         onClick={closePDFViewer}
+                         className="px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-700"
+                       >
+                         Close
+                       </button>
+                     </div>
+                   </div>
+                   
+                   {/* PDF Content */}
+                   <div className="flex-1 p-4">
+                     <iframe
+                       src={`http://localhost:3001${selectedPDF.url}`}
+                       className="w-full h-full border-0 rounded"
+                       title={selectedPDF.name}
+                     />
+                   </div>
+                   
+                   {/* PDF List Footer */}
+                   {pdfFiles.length > 1 && (
+                     <div className="p-4 border-t bg-gray-50">
+                       <h4 className="text-sm font-medium text-gray-700 mb-2">Other PDFs:</h4>
+                       <div className="flex flex-wrap gap-2">
+                         {pdfFiles.map((pdf, index) => (
+                           <button
+                             key={index}
+                             onClick={() => selectPDF(pdf)}
+                             className={`px-3 py-1 text-xs rounded ${
+                               selectedPDF.name === pdf.name
+                                 ? 'bg-blue-600 text-white'
+                                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                             }`}
+                           >
+                             {pdf.name}
+                           </button>
+                         ))}
+                       </div>
+                     </div>
+                   )}
+                 </div>
+               </div>
+             )}
            </div>
          </>
        );
