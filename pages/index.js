@@ -9,8 +9,6 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [apiLoading, setApiLoading] = useState(false);
   const [pdfFiles, setPdfFiles] = useState([]);
-  const [selectedPDF, setSelectedPDF] = useState(null);
-  const [showPDFViewer, setShowPDFViewer] = useState(false);
 
   // Fetch companies from API
   useEffect(() => {
@@ -65,21 +63,10 @@ export default function Home() {
         const data = await response.json();
         const pdfs = data.pdfs || [];
         setPdfFiles(pdfs);
-        
-        // Automatically display the first PDF if available
-        if (pdfs.length > 0) {
-          setSelectedPDF(pdfs[0]);
-          setShowPDFViewer(true);
-        } else {
-          setSelectedPDF(null);
-          setShowPDFViewer(false);
-        }
       }
     } catch (error) {
       console.error('Error fetching PDFs:', error);
       setPdfFiles([]);
-      setSelectedPDF(null);
-      setShowPDFViewer(false);
     } finally {
       setApiLoading(false);
     }
@@ -107,8 +94,6 @@ export default function Home() {
     setSelectedTopic('');
     setTopics([]);
     setPdfFiles([]);
-    setSelectedPDF(null);
-    setShowPDFViewer(false);
   };
 
   const viewPDF = (pdfUrl) => {
@@ -124,15 +109,6 @@ export default function Home() {
     document.body.removeChild(link);
   };
 
-  const selectPDF = (pdf) => {
-    setSelectedPDF(pdf);
-    setShowPDFViewer(true);
-  };
-
-  const closePDFViewer = () => {
-    setShowPDFViewer(false);
-    setSelectedPDF(null);
-  };
 
   return (
     <>
@@ -267,72 +243,36 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* PDF Files Display */}
+              {/* PDF Content Display */}
               {selectedCompany && selectedTopic && pdfFiles.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Available PDFs:</h4>
-                  <div className="space-y-2">
-                    {pdfFiles.map((pdf, index) => (
-                      <div key={index} className={`flex items-center justify-between p-2 rounded cursor-pointer transition-colors ${
-                        selectedPDF && selectedPDF.name === pdf.name 
-                          ? 'bg-blue-100 border border-blue-300' 
-                          : 'bg-gray-50 hover:bg-gray-100'
-                      }`}>
-                        <span 
-                          className="text-sm text-gray-600 flex-1"
-                          onClick={() => selectPDF(pdf)}
-                        >
-                          {pdf.name}
-                          {selectedPDF && selectedPDF.name === pdf.name && (
-                            <span className="ml-2 text-blue-600 text-xs">(Currently viewing)</span>
-                          )}
-                        </span>
-                        <div className="space-x-2">
-                          <button
-                            onClick={() => selectPDF(pdf)}
-                            className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-                          >
-                            {selectedPDF && selectedPDF.name === pdf.name ? 'Viewing' : 'View'}
-                          </button>
-                          <button
-                            onClick={() => downloadPDF(pdf.url, pdf.name)}
-                            className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
-                          >
-                            Download
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                <div className="mt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-semibold text-gray-800">📄 {pdfFiles[0].name}</h4>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => downloadPDF(pdfFiles[0].url, pdfFiles[0].name)}
+                        className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        Download
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* PDF Viewer */}
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                    <iframe
+                      src={pdfFiles[0].url}
+                      className="w-full h-[600px] border-0"
+                      title={pdfFiles[0].name}
+                    />
                   </div>
                 </div>
               )}
 
               {/* Show message when no PDFs are available */}
               {selectedCompany && selectedTopic && pdfFiles.length === 0 && !apiLoading && (
-                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <p className="text-sm text-yellow-700">No PDF files found for this topic.</p>
-                </div>
-              )}
-
-              {/* Simple PDF Display */}
-              {selectedCompany && selectedTopic && pdfFiles.length > 0 && (
-                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded">
-                  <h4 className="text-sm font-medium text-blue-800 mb-2">📄 PDF Content:</h4>
-                  <div className="bg-white p-3 rounded border">
-                    <iframe
-                      src={pdfFiles[0].url}
-                      className="w-full h-96 border-0 rounded"
-                      title={pdfFiles[0].name}
-                    />
-                  </div>
-                  <div className="mt-2 flex space-x-2">
-                    <button
-                      onClick={() => downloadPDF(pdfFiles[0].url, pdfFiles[0].name)}
-                      className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
-                    >
-                      Download PDF
-                    </button>
-                  </div>
                 </div>
               )}
                    </div>
@@ -340,64 +280,6 @@ export default function Home() {
                </div>
              </div>
 
-             {/* PDF Viewer Modal */}
-             {showPDFViewer && selectedPDF && (
-               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                 <div className="bg-white rounded-lg shadow-xl max-w-6xl max-h-[90vh] w-full flex flex-col">
-                   {/* PDF Viewer Header */}
-                   <div className="flex items-center justify-between p-4 border-b">
-                     <h3 className="text-lg font-semibold text-gray-800">
-                       {selectedPDF.name}
-                     </h3>
-                     <div className="flex items-center space-x-2">
-                       <button
-                         onClick={() => downloadPDF(selectedPDF.url, selectedPDF.name)}
-                         className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
-                       >
-                         Download
-                       </button>
-                       <button
-                         onClick={closePDFViewer}
-                         className="px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-700"
-                       >
-                         Close
-                       </button>
-                     </div>
-                   </div>
-                   
-                   {/* PDF Content */}
-                   <div className="flex-1 p-4">
-                     <iframe
-                       src={selectedPDF.url}
-                       className="w-full h-full border-0 rounded"
-                       title={selectedPDF.name}
-                     />
-                   </div>
-                   
-                   {/* PDF List Footer */}
-                   {pdfFiles.length > 1 && (
-                     <div className="p-4 border-t bg-gray-50">
-                       <h4 className="text-sm font-medium text-gray-700 mb-2">Other PDFs:</h4>
-                       <div className="flex flex-wrap gap-2">
-                         {pdfFiles.map((pdf, index) => (
-                           <button
-                             key={index}
-                             onClick={() => selectPDF(pdf)}
-                             className={`px-3 py-1 text-xs rounded ${
-                               selectedPDF.name === pdf.name
-                                 ? 'bg-blue-600 text-white'
-                                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                             }`}
-                           >
-                             {pdf.name}
-                           </button>
-                         ))}
-                       </div>
-                     </div>
-                   )}
-                 </div>
-               </div>
-             )}
            </div>
          </>
        );
