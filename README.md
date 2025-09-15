@@ -90,4 +90,4 @@ Place your ML system design PDFs under `content/<Company>/<Topic>/*.pdf`.
 - Stream topic PDF: `GET /api/companies/:company/topics/:topic/pdf`
 
 Frontend automatically populates dropdowns from these endpoints and displays the PDF.
-- Responsive Design
+- Responsive Design# Clean installation completed - webpack issues resolved
