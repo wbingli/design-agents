@@ -10,6 +10,10 @@ An interactive web application for exploring system design patterns used by majo
 - ⚡ Interactive topic selection with smooth animations
 - 📚 Educational content covering scalability and performance
 
+## Team Roadmaps
+
+- [ML Interview Practice Roadmap](docs/ml-interview-roadmap.md) — shared implementation plan covering the vision, phased milestones, and task dependencies for the mock interview experience.
+
 ## Companies & Topics
 
 ### Meta
