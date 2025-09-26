@@ -2,11 +2,51 @@
   "scenarios": [
     {
       "id": "meta-news-feed",
+      "title": "Meta News Feed Ranking System",
+      "description": "Design the end-to-end ranking system that powers the News Feed experience for billions of daily users while balancing engagement, well-being, and system resilience.",
+      "company": "Meta",
+      "topic": "News Feed",
+      "difficulty": "Intermediate",
+      "duration": "45 minute live interview",
+      "focusAreas": [
+        "Signals & personalization strategy",
+        "Ranking pipeline and system topology",
+        "Online metrics, guardrails, and iteration loops"
+      ],
+      "takeaways": [
+        "Clarify the product objective and define north-star metrics up front.",
+        "Translate product requirements into ML signals, features, and feedback loops.",
+        "Outline how the ranking service scales globally and adapts to real-time events."
+      ],
       "companyLabel": "Meta",
       "topicLabel": "News Feed",
-      "promptPath": "content/Meta/News-Feed/Design-a-News-Feed-ML-Ranking-System.md",
+      "promptPath": "prompts/scenarios/meta-news-feed.md",
       "segmentDurations": [600, 900, 900, 600, 600],
       "default": true
+    },
+    {
+      "id": "meta-cold-start",
+      "title": "Meta Cold Start & Onboarding",
+      "description": "You are responsible for the experience of brand new users who open the app with no historical signals. Design a bootstrapping strategy that surfaces high-quality content quickly.",
+      "company": "Meta",
+      "topic": "News Feed",
+      "difficulty": "Advanced",
+      "duration": "60 minute whiteboard",
+      "focusAreas": [
+        "User modeling without historical signals",
+        "Freshness-aware ranking and exploration",
+        "Success metrics for retention and trust"
+      ],
+      "takeaways": [
+        "Balance exploration and exploitation to learn user preferences safely.",
+        "Integrate qualitative onboarding cues with quantitative ranking feedback.",
+        "Plan measurement that isolates the impact of onboarding changes."
+      ],
+      "companyLabel": "Meta",
+      "topicLabel": "News Feed",
+      "promptPath": "prompts/scenarios/meta-cold-start.md",
+      "segmentDurations": [600, 900, 900, 600, 600],
+      "default": false
     }
   ]
 }

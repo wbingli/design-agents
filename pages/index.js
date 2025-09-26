@@ -4,107 +4,128 @@ import ReactMarkdown from 'react-markdown';
 import ScenarioPreview from '../components/session/ScenarioPreview';
 import ScenarioPicker from '../components/session/ScenarioPicker';
 
-const SCENARIO_TEMPLATES = [
-  {
-    id: 'meta-news-feed',
-    title: 'Meta News Feed Ranking System',
-    description:
-      'Design the end-to-end ranking system that powers the News Feed experience for billions of daily users while balancing engagement, well-being, and system resilience.',
-    company: 'Meta',
-    topic: 'News-Feed',
-    difficulty: 'Intermediate',
-    duration: '45 minute live interview',
-    focusAreas: [
-      'Signals & personalization strategy',
-      'Ranking pipeline and system topology',
-      'Online metrics, guardrails, and iteration loops',
-    ],
-    takeaways: [
-      'Clarify the product objective and define north-star metrics up front.',
-      'Translate product requirements into ML signals, features, and feedback loops.',
-      'Outline how the ranking service scales globally and adapts to real-time events.',
-    ],
-  },
-  {
-    id: 'meta-cold-start',
-    title: 'Meta Cold Start & Onboarding',
-    description:
-      'You are responsible for the experience of brand new users who open the app with no historical signals. Design a bootstrapping strategy that surfaces high-quality content quickly.',
-    company: 'Meta',
-    topic: 'News-Feed',
-    difficulty: 'Advanced',
-    duration: '60 minute whiteboard',
-    focusAreas: [
-      'User modeling without historical signals',
-      'Freshness-aware ranking and exploration',
-      'Success metrics for retention and trust',
-    ],
-    takeaways: [
-      'Balance exploration and exploitation to learn user preferences safely.',
-      'Integrate qualitative onboarding cues with quantitative ranking feedback.',
-      'Plan measurement that isolates the impact of onboarding changes.',
-    ],
-  },
-];
-
 export default function Home() {
   const [stage, setStage] = useState('intro');
-  const [selectedScenarioId, setSelectedScenarioId] = useState(SCENARIO_TEMPLATES[0].id);
+  const [scenarios, setScenarios] = useState([]);
+  const [selectedScenarioId, setSelectedScenarioId] = useState(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const [question, setQuestion] = useState(null);
-  const [apiLoading, setApiLoading] = useState(false);
+  const [scenarioDetails, setScenarioDetails] = useState(null);
+  const [manifestError, setManifestError] = useState(null);
+  const [promptError, setPromptError] = useState(null);
+  const [isManifestLoading, setIsManifestLoading] = useState(true);
+  const [isPromptLoading, setIsPromptLoading] = useState(false);
+  const [manifestRequestId, setManifestRequestId] = useState(0);
+  const [promptRequestId, setPromptRequestId] = useState(0);
 
   const selectedScenario = useMemo(
-    () => SCENARIO_TEMPLATES.find((scenario) => scenario.id === selectedScenarioId),
-    [selectedScenarioId]
+    () => scenarios.find((scenario) => scenario.id === selectedScenarioId) || null,
+    [scenarios, selectedScenarioId]
   );
 
   useEffect(() => {
-    if (!selectedScenario?.company || !selectedScenario?.topic) {
-      setQuestion(null);
+    let ignore = false;
+
+    const fetchManifest = async () => {
+      try {
+        setIsManifestLoading(true);
+        setManifestError(null);
+
+        const response = await fetch('/api/scenarios');
+        if (!response.ok) {
+          throw new Error(`Failed to load scenarios: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (ignore) {
+          return;
+        }
+
+        const manifestList = Array.isArray(data.scenarios) ? data.scenarios : [];
+        setScenarios(manifestList);
+
+        const defaultId =
+          data.defaultScenario?.id ||
+          manifestList.find((item) => item.default)?.id ||
+          manifestList[0]?.id ||
+          null;
+        setSelectedScenarioId((prev) => prev || defaultId);
+      } catch (error) {
+        console.error('Error loading scenario manifest:', error);
+        if (!ignore) {
+          setManifestError('Unable to load scenarios. Please try again.');
+          setScenarios([]);
+          setSelectedScenarioId(null);
+        }
+      } finally {
+        if (!ignore) {
+          setIsManifestLoading(false);
+        }
+      }
+    };
+
+    fetchManifest();
+
+    return () => {
+      ignore = true;
+    };
+  }, [manifestRequestId]);
+
+  useEffect(() => {
+    if (!selectedScenarioId) {
+      setScenarioDetails(null);
       return;
     }
 
     let ignore = false;
 
-    const fetchQuestion = async () => {
+    const fetchScenario = async () => {
       try {
-        setApiLoading(true);
-        const response = await fetch(
-          `/api/pdf-files?company=${encodeURIComponent(selectedScenario.company)}&topic=${encodeURIComponent(selectedScenario.topic)}`
+        setIsPromptLoading(true);
+        setPromptError(null);
+        setScenarioDetails((previous) =>
+          previous?.id === selectedScenarioId ? previous : null
         );
+
+        const response = await fetch(`/api/scenarios/${selectedScenarioId}`);
+        if (!response.ok) {
+          throw new Error(`Failed to load scenario ${selectedScenarioId}: ${response.status}`);
+        }
+
+        const data = await response.json();
         if (!ignore) {
-          if (response.ok) {
-            const data = await response.json();
-            setQuestion(data.question || null);
-          } else {
-            setQuestion(null);
-          }
+          setScenarioDetails(data);
         }
       } catch (error) {
-        console.error('Error fetching question content:', error);
+        console.error(`Error fetching scenario ${selectedScenarioId}:`, error);
         if (!ignore) {
-          setQuestion(null);
+          setScenarioDetails(null);
+          setPromptError('Unable to load scenario prompt. Please try again.');
         }
       } finally {
         if (!ignore) {
-          setApiLoading(false);
+          setIsPromptLoading(false);
         }
       }
     };
 
-    fetchQuestion();
+    fetchScenario();
 
     return () => {
       ignore = true;
     };
-  }, [selectedScenario]);
+  }, [selectedScenarioId, promptRequestId]);
 
   const handleStartSession = () => {
+    if (!selectedScenarioId) {
+      return;
+    }
     setStage('session');
   };
 
   const handleScenarioSelect = (scenario) => {
+    if (!scenario?.id) {
+      return;
+    }
     setSelectedScenarioId(scenario.id);
     setIsPickerOpen(false);
   };
@@ -116,6 +137,17 @@ export default function Home() {
   const openSummary = () => {
     setStage('summary');
   };
+
+  const handleRetryManifest = () => {
+    setManifestRequestId((id) => id + 1);
+  };
+
+  const handleRetryPrompt = () => {
+    setPromptRequestId((id) => id + 1);
+  };
+
+  const previewScenario = scenarioDetails || selectedScenario;
+  const promptMarkdown = scenarioDetails?.prompt || '';
 
   return (
     <>
@@ -147,7 +179,12 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={handleStartSession}
-                  className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-base font-semibold text-slate-900 shadow-lg shadow-indigo-500/30 transition hover:-translate-y-0.5 hover:bg-indigo-50"
+                  disabled={!selectedScenarioId || isManifestLoading}
+                  className={`inline-flex items-center justify-center rounded-full px-6 py-3 text-base font-semibold shadow-lg shadow-indigo-500/30 transition hover:-translate-y-0.5 hover:bg-indigo-50 ${
+                    !selectedScenarioId || isManifestLoading
+                      ? 'cursor-not-allowed bg-white/40 text-slate-600'
+                      : 'bg-white text-slate-900'
+                  }`}
                 >
                   Start session
                 </button>
@@ -155,13 +192,29 @@ export default function Home() {
                   type="button"
                   onClick={() => setIsPickerOpen(true)}
                   className="inline-flex items-center justify-center rounded-full border border-white/30 px-6 py-3 text-base font-semibold text-white transition hover:border-white hover:bg-white/10"
+                  disabled={isManifestLoading}
                 >
                   Browse scenarios
                 </button>
               </div>
+              {isManifestLoading && (
+                <p className="text-sm text-indigo-200/80">Loading scenarios…</p>
+              )}
+              {manifestError && (
+                <div className="rounded-2xl border border-red-200/40 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                  <p>{manifestError}</p>
+                  <button
+                    type="button"
+                    onClick={handleRetryManifest}
+                    className="mt-2 inline-flex items-center gap-2 rounded-full border border-red-200/60 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-red-100 transition hover:border-red-100 hover:text-white"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
             </header>
 
-            <ScenarioPreview scenario={selectedScenario} variant="hero" />
+            <ScenarioPreview scenario={previewScenario} variant="hero" />
           </div>
         </section>
       )}
@@ -170,7 +223,7 @@ export default function Home() {
         <section className="min-h-screen bg-slate-950 px-6 py-16 text-white">
           <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 lg:flex-row">
             <div className="lg:w-5/12 lg:max-w-sm">
-              <ScenarioPreview scenario={selectedScenario} variant="panel" />
+              <ScenarioPreview scenario={previewScenario} variant="panel" />
               <div className="mt-6 flex flex-wrap gap-3">
                 <button
                   type="button"
@@ -195,10 +248,10 @@ export default function Home() {
                   <div>
                     <p className="text-sm uppercase tracking-widest text-indigo-200">Session prompt</p>
                     <h2 className="text-2xl font-semibold text-white">
-                      {question?.title || selectedScenario?.title}
+                      {scenarioDetails?.title || selectedScenario?.title || 'Select a scenario'}
                     </h2>
                   </div>
-                  {apiLoading && (
+                  {isPromptLoading && (
                     <span className="inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-1 text-xs font-medium text-indigo-100">
                       <span className="h-2 w-2 animate-pulse rounded-full bg-indigo-300" aria-hidden />
                       Loading content…
@@ -207,9 +260,22 @@ export default function Home() {
                 </header>
 
                 <div className="prose prose-invert mt-6 max-w-none text-indigo-100">
-                  {question ? (
-                    <ReactMarkdown>{question.content}</ReactMarkdown>
-                  ) : (
+                  {promptError && (
+                    <div className="rounded-2xl border border-red-200/40 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                      <p>{promptError}</p>
+                      <button
+                        type="button"
+                        onClick={handleRetryPrompt}
+                        className="mt-2 inline-flex items-center gap-2 rounded-full border border-red-200/60 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-red-100 transition hover:border-red-100 hover:text-white"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  )}
+
+                  {!promptError && promptMarkdown && <ReactMarkdown>{promptMarkdown}</ReactMarkdown>}
+
+                  {!promptError && !promptMarkdown && !isPromptLoading && (
                     <p className="text-base leading-relaxed text-indigo-100/80">
                       We are generating a detailed prompt and walkthrough for this scenario. Use the overview on the left to structure your discussion, or pick another scenario to explore a different challenge.
                     </p>
@@ -251,7 +317,7 @@ export default function Home() {
       <ScenarioPicker
         open={isPickerOpen}
         onClose={() => setIsPickerOpen(false)}
-        scenarios={SCENARIO_TEMPLATES}
+        scenarios={scenarios}
         onSelect={handleScenarioSelect}
         selectedScenarioId={selectedScenarioId}
       />
