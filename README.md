@@ -13,8 +13,7 @@ An end-to-end web experience that guides candidates through a one-hour, machine-
    - Serving & optimization (10 minutes)
    - Advanced topics & edge cases (5 minutes)
 4. **LLM-driven Q&A** — Each segment hosts a chat panel where an OpenAI-powered interviewer asks probing questions and reacts to candidate answers without streaming for the first iteration.
-5. **Google SSO & persistence** — Users authenticate with Google, enabling transcript storage, session history, and personal default scenario preferences.
-6. **Wrap-up insights** — Upon completion, candidates receive a transcript review with export options and prompts for next steps.
+5. **Wrap-up insights** — Upon completion, candidates receive a transcript review with export options and prompts for next steps.
 
 ## Implementation Roadmap
 
@@ -35,11 +34,7 @@ An end-to-end web experience that guides candidates through a one-hour, machine-
 - Build an API route (e.g., `pages/api/session/messages.js`) that sends chat history and segment context to OpenAI and returns responses.
 - Render a chat interface that tags messages by segment and reflects timer transitions.
 
-### 5. Authentication & Persistence
-- Configure NextAuth with Google provider, Prisma adapter, and models for users, interview sessions, and transcripts.
-- Gate the session experience behind authentication and save transcripts/default scenario preferences per user.
-
-### 6. Wrap-up & Settings
+### 5. Wrap-up & Settings
 - Deliver a summary stage that shows the transcript, downloadable artifacts, and restart/change-scenario options.
 - Introduce a protected user settings page for managing default scenario selection (with room for future preferences).
 
