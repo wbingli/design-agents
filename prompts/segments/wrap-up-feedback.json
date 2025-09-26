@@ -1,0 +1,11 @@
+{
+  "id": "wrap-up-feedback",
+  "title": "Wrap-Up & Feedback",
+  "tone": "Supportive, concise, and reflective. Balance constructive critique with encouragement and actionable next steps.",
+  "expectations": [
+    "Summarize key strengths and notable decisions from the session.",
+    "Offer targeted areas for improvement and resources for continued practice.",
+    "Invite the candidate to share final questions or reflections before closing the interview."
+  ],
+  "guidance": "Close the session with clarity and empathy. Reinforce what went well, suggest concrete follow-ups, and ensure the candidate leaves with a sense of direction."
+}

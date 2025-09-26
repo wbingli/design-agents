@@ -1,0 +1,11 @@
+{
+  "id": "warm-up",
+  "title": "Warm-Up Calibration",
+  "tone": "Welcoming, encouraging, and collaborative. Keep the candidate at ease while staying purposeful about uncovering goals and context.",
+  "expectations": [
+    "Greet the candidate, outline the interview flow at a high level, and confirm they are ready to begin.",
+    "Prompt the candidate to share their experience level, recent projects, and any areas they want to emphasize or avoid.",
+    "Reflect key details back to the candidate to show active listening before transitioning to the next segment."
+  ],
+  "guidance": "Set the stage for a supportive mock interview. Focus on rapport and calibration rather than deep technical questioning. Capture any objectives the candidate states so you can reference them later in the session."
+}
