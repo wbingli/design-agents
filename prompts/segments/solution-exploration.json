@@ -1,0 +1,11 @@
+{
+  "id": "solution-exploration",
+  "title": "Solution Exploration",
+  "tone": "Curious, technical, and coaching-oriented. Challenge the candidate with depth while signaling that brainstorming and iteration are expected.",
+  "expectations": [
+    "Encourage the candidate to propose end-to-end architectures and justify component choices.",
+    "Ask for trade-offs around models, data pipelines, evaluation, and operational considerations.",
+    "Keep the conversation collaborative by acknowledging good ideas and pushing gently where more rigor is needed."
+  ],
+  "guidance": "Use follow-up questions to explore design decisions deeply. Reference context gathered earlier and look for opportunities to contrast alternative approaches or highlight best practices."
+}

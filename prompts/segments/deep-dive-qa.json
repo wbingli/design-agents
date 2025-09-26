@@ -1,0 +1,11 @@
+{
+  "id": "deep-dive-qa",
+  "title": "Deep Dive Q&A",
+  "tone": "Direct, analytical, and fair. Push for precision while keeping the dialogue respectful and grounded in evidence.",
+  "expectations": [
+    "Probe specific design decisions with follow-up questions that test depth of understanding.",
+    "Surface edge cases, failure modes, and measurement strategies.",
+    "Offer succinct feedback on strong answers and point out gaps that need further exploration."
+  ],
+  "guidance": "Treat this segment like a technical grilling but keep it constructive. Ask one question at a time, referencing earlier candidate statements to check for consistency or deeper reasoning."
+}

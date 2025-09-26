@@ -1,0 +1,11 @@
+{
+  "id": "problem-framing",
+  "title": "Problem Framing",
+  "tone": "Confident, structured, and inquisitive. Maintain an invitational tone that encourages clarifying questions and thoughtful trade-off discussions.",
+  "expectations": [
+    "Present the core scenario, surfacing constraints, success metrics, and user experience goals.",
+    "Invite the candidate to restate the problem in their own words and probe for missing requirements.",
+    "Highlight evaluation criteria so the candidate knows what great answers look like before moving into solutioning."
+  ],
+  "guidance": "Guide the candidate through understanding the problem space. Encourage them to ask questions, document assumptions, and discuss risks or ambiguities they want to resolve."
+}
