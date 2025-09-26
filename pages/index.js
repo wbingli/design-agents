@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 
 export default function Home() {
@@ -7,9 +8,67 @@ export default function Home() {
   const [topics, setTopics] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [scenarios, setScenarios] = useState([]);
+  const [selectedScenarioId, setSelectedScenarioId] = useState('');
+  const [manifestDefaultScenarioId, setManifestDefaultScenarioId] = useState('');
+  const [scenarioLoading, setScenarioLoading] = useState(false);
   const [apiLoading, setApiLoading] = useState(false);
   const [question, setQuestion] = useState(null);
+
+  useEffect(() => {
+    const loadScenarios = async () => {
+      try {
+        setScenarioLoading(true);
+        const response = await fetch('/api/scenarios');
+        if (!response.ok) {
+          throw new Error('Failed to load scenarios');
+        }
+        const data = await response.json();
+        const scenarioList = data.scenarios || [];
+        setScenarios(scenarioList);
+
+        let defaultScenarioId = '';
+        if (data?.defaultScenario?.id) {
+          defaultScenarioId = data.defaultScenario.id;
+        } else if (scenarioList.length > 0) {
+          const flaggedDefault = scenarioList.find((scenario) => scenario.default);
+          defaultScenarioId = flaggedDefault?.id ?? scenarioList[0].id;
+        }
+
+        setManifestDefaultScenarioId(defaultScenarioId);
+
+        let initialScenarioId = defaultScenarioId;
+
+        try {
+          const settingsResponse = await fetch('/api/user-settings', {
+            credentials: 'include',
+          });
+          if (settingsResponse.ok) {
+            const settingsData = await settingsResponse.json();
+            if (settingsData?.scenarioId) {
+              initialScenarioId = settingsData.scenarioId;
+            } else if (settingsData?.scenarioId === null) {
+              initialScenarioId = defaultScenarioId;
+            }
+          }
+        } catch (settingsError) {
+          console.warn('Unable to load user settings', settingsError);
+        }
+
+        if (initialScenarioId && !scenarioList.some((scenario) => scenario.id === initialScenarioId)) {
+          initialScenarioId = defaultScenarioId;
+        }
+
+        setSelectedScenarioId(initialScenarioId || '');
+      } catch (error) {
+        console.error('Failed to load scenarios', error);
+      } finally {
+        setScenarioLoading(false);
+      }
+    };
+
+    loadScenarios();
+  }, []);
 
   // Fetch companies from API
   useEffect(() => {
@@ -36,7 +95,7 @@ export default function Home() {
   }, []);
 
   // Fetch ML topics from API when company is selected
-  const fetchTopics = async (company) => {
+  const fetchTopics = useCallback(async (company) => {
     try {
       setApiLoading(true);
       const response = await fetch(`/api/ml-topics?company=${encodeURIComponent(company)}`);
@@ -53,10 +112,10 @@ export default function Home() {
     } finally {
       setApiLoading(false);
     }
-  };
+  }, []);
 
   // Fetch PDFs when both company and topic are selected
-  const fetchQuestion = async (company, topic) => {
+  const fetchQuestion = useCallback(async (company, topic) => {
     try {
       setApiLoading(true);
       const response = await fetch(`/api/pdf-files?company=${encodeURIComponent(company)}&topic=${encodeURIComponent(topic)}`);
@@ -72,7 +131,39 @@ export default function Home() {
     } finally {
       setApiLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const activeScenarioId = selectedScenarioId || manifestDefaultScenarioId;
+    if (!activeScenarioId) {
+      setSelectedCompany('');
+      setSelectedTopic('');
+      setTopics([]);
+      setQuestion(null);
+      return;
+    }
+
+    const scenario = scenarios.find((item) => item.id === activeScenarioId);
+    if (!scenario) {
+      return;
+    }
+
+    const applyScenarioSelection = async () => {
+      if (!scenario.companyLabel) {
+        return;
+      }
+      setSelectedCompany(scenario.companyLabel);
+      setSelectedTopic('');
+      setQuestion(null);
+      await fetchTopics(scenario.companyLabel);
+      if (scenario.topicLabel) {
+        setSelectedTopic(scenario.topicLabel);
+        await fetchQuestion(scenario.companyLabel, scenario.topicLabel);
+      }
+    };
+
+    applyScenarioSelection();
+  }, [selectedScenarioId, manifestDefaultScenarioId, scenarios, fetchTopics, fetchQuestion]);
 
   const handleCompanyChange = (company) => {
     setSelectedCompany(company);
@@ -91,6 +182,19 @@ export default function Home() {
     if (selectedCompany && topic) {
       fetchQuestion(selectedCompany, topic);
     }
+  };
+
+  const handleScenarioChange = (scenarioId) => {
+    if (!scenarioId) {
+      if (manifestDefaultScenarioId) {
+        setSelectedScenarioId(manifestDefaultScenarioId);
+      } else {
+        setSelectedScenarioId('');
+        clearSelection();
+      }
+      return;
+    }
+    setSelectedScenarioId(scenarioId);
   };
 
   const clearSelection = () => {
@@ -136,9 +240,48 @@ export default function Home() {
 
              {/* Main Content Area */}
              <div className="relative z-10 w-full max-w-4xl mt-48">
-               <div className="space-y-5">
-                 {/* Top Row: Company and Topic Selection */}
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+             <div className="space-y-5">
+                <div className="bg-white rounded-2xl shadow-lg p-5">
+                  <div className="flex items-center mb-4">
+                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                      <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0-6C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" />
+                      </svg>
+                    </div>
+                    <h2 className="text-lg font-semibold text-gray-800">Mock Interview Scenario</h2>
+                  </div>
+                  <hr className="border-gray-200 mb-4" />
+                  <p className="text-sm text-gray-600 mb-3">
+                    We’ll use this scenario to pre-select the company and topic for your practice session. Update your default in the settings page.
+                  </p>
+                  <select
+                    value={selectedScenarioId || ''}
+                    onChange={(event) => handleScenarioChange(event.target.value)}
+                    disabled={scenarioLoading || scenarios.length === 0}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors disabled:bg-gray-50 disabled:text-gray-500"
+                  >
+                    {scenarioLoading ? (
+                      <option value="">Loading scenarios…</option>
+                    ) : scenarios.length === 0 ? (
+                      <option value="">No scenarios available</option>
+                    ) : (
+                      scenarios.map((scenario) => (
+                        <option key={scenario.id} value={scenario.id}>
+                          {scenario.companyLabel ? `${scenario.companyLabel} – ${scenario.topicLabel}` : scenario.topicLabel || scenario.id}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-3">
+                    Looking for a different default? Visit the{' '}
+                    <Link href="/settings" className="text-purple-600 hover:text-purple-500 font-medium">
+                      settings page
+                    </Link>{' '}
+                    to save your preference.
+                  </p>
+                </div>
+                {/* Top Row: Company and Topic Selection */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             
             {/* Company Selection Card */}
             <div className="bg-white rounded-2xl shadow-lg p-5">
