@@ -1,266 +1,260 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Head from 'next/head';
 import ReactMarkdown from 'react-markdown';
+import ScenarioPreview from '../components/session/ScenarioPreview';
+import ScenarioPicker from '../components/session/ScenarioPicker';
+
+const SCENARIO_TEMPLATES = [
+  {
+    id: 'meta-news-feed',
+    title: 'Meta News Feed Ranking System',
+    description:
+      'Design the end-to-end ranking system that powers the News Feed experience for billions of daily users while balancing engagement, well-being, and system resilience.',
+    company: 'Meta',
+    topic: 'News-Feed',
+    difficulty: 'Intermediate',
+    duration: '45 minute live interview',
+    focusAreas: [
+      'Signals & personalization strategy',
+      'Ranking pipeline and system topology',
+      'Online metrics, guardrails, and iteration loops',
+    ],
+    takeaways: [
+      'Clarify the product objective and define north-star metrics up front.',
+      'Translate product requirements into ML signals, features, and feedback loops.',
+      'Outline how the ranking service scales globally and adapts to real-time events.',
+    ],
+  },
+  {
+    id: 'meta-cold-start',
+    title: 'Meta Cold Start & Onboarding',
+    description:
+      'You are responsible for the experience of brand new users who open the app with no historical signals. Design a bootstrapping strategy that surfaces high-quality content quickly.',
+    company: 'Meta',
+    topic: 'News-Feed',
+    difficulty: 'Advanced',
+    duration: '60 minute whiteboard',
+    focusAreas: [
+      'User modeling without historical signals',
+      'Freshness-aware ranking and exploration',
+      'Success metrics for retention and trust',
+    ],
+    takeaways: [
+      'Balance exploration and exploitation to learn user preferences safely.',
+      'Integrate qualitative onboarding cues with quantitative ranking feedback.',
+      'Plan measurement that isolates the impact of onboarding changes.',
+    ],
+  },
+];
 
 export default function Home() {
-  const [companies, setCompanies] = useState([]);
-  const [topics, setTopics] = useState([]);
-  const [selectedCompany, setSelectedCompany] = useState('');
-  const [selectedTopic, setSelectedTopic] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [apiLoading, setApiLoading] = useState(false);
+  const [stage, setStage] = useState('intro');
+  const [selectedScenarioId, setSelectedScenarioId] = useState(SCENARIO_TEMPLATES[0].id);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [question, setQuestion] = useState(null);
+  const [apiLoading, setApiLoading] = useState(false);
 
-  // Fetch companies from API
+  const selectedScenario = useMemo(
+    () => SCENARIO_TEMPLATES.find((scenario) => scenario.id === selectedScenarioId),
+    [selectedScenarioId]
+  );
+
   useEffect(() => {
-  const fetchCompanies = async () => {
-    try {
-      setApiLoading(true);
-      const response = await fetch('/api/companies');
-        if (response.ok) {
-          const data = await response.json();
-          setCompanies(data.companies || []);
-        } else {
-          console.error('Failed to fetch companies:', response.status);
-          setCompanies([]);
+    if (!selectedScenario?.company || !selectedScenario?.topic) {
+      setQuestion(null);
+      return;
+    }
+
+    let ignore = false;
+
+    const fetchQuestion = async () => {
+      try {
+        setApiLoading(true);
+        const response = await fetch(
+          `/api/pdf-files?company=${encodeURIComponent(selectedScenario.company)}&topic=${encodeURIComponent(selectedScenario.topic)}`
+        );
+        if (!ignore) {
+          if (response.ok) {
+            const data = await response.json();
+            setQuestion(data.question || null);
+          } else {
+            setQuestion(null);
+          }
         }
       } catch (error) {
-        console.error('Error fetching companies:', error);
-        setCompanies([]);
+        console.error('Error fetching question content:', error);
+        if (!ignore) {
+          setQuestion(null);
+        }
       } finally {
-        setApiLoading(false);
+        if (!ignore) {
+          setApiLoading(false);
+        }
       }
     };
 
-    fetchCompanies();
-  }, []);
+    fetchQuestion();
 
-  // Fetch ML topics from API when company is selected
-  const fetchTopics = async (company) => {
-    try {
-      setApiLoading(true);
-      const response = await fetch(`/api/ml-topics?company=${encodeURIComponent(company)}`);
-      if (response.ok) {
-        const data = await response.json();
-        setTopics(data.topics || []);
-      } else {
-        console.error('Failed to fetch topics:', response.status);
-        setTopics([]);
-      }
-    } catch (error) {
-      console.error('Error fetching topics:', error);
-      setTopics([]);
-    } finally {
-      setApiLoading(false);
-    }
+    return () => {
+      ignore = true;
+    };
+  }, [selectedScenario]);
+
+  const handleStartSession = () => {
+    setStage('session');
   };
 
-  // Fetch PDFs when both company and topic are selected
-  const fetchQuestion = async (company, topic) => {
-    try {
-      setApiLoading(true);
-      const response = await fetch(`/api/pdf-files?company=${encodeURIComponent(company)}&topic=${encodeURIComponent(topic)}`);
-      if (response.ok) {
-        const data = await response.json();
-        setQuestion(data.question || null);
-      } else {
-        setQuestion(null);
-      }
-    } catch (error) {
-      console.error('Error fetching question content:', error);
-      setQuestion(null);
-    } finally {
-      setApiLoading(false);
-    }
+  const handleScenarioSelect = (scenario) => {
+    setSelectedScenarioId(scenario.id);
+    setIsPickerOpen(false);
   };
 
-  const handleCompanyChange = (company) => {
-    setSelectedCompany(company);
-    setSelectedTopic('');
-    setQuestion(null);
-    if (company) {
-      fetchTopics(company);
-    } else {
-      setTopics([]);
-    }
+  const restartIntro = () => {
+    setStage('intro');
   };
 
-  const handleTopicChange = (topic) => {
-    setSelectedTopic(topic);
-    setQuestion(null);
-    if (selectedCompany && topic) {
-      fetchQuestion(selectedCompany, topic);
-    }
+  const openSummary = () => {
+    setStage('summary');
   };
-
-  const clearSelection = () => {
-    setSelectedCompany('');
-    setSelectedTopic('');
-    setTopics([]);
-    setQuestion(null);
-  };
-
 
   return (
     <>
       <Head>
         <title>Machine Learning System Design Learning</title>
-        <meta name="description" content="Select a company and topic to learn machine learning system design" />
+        <meta
+          name="description"
+          content="Interactive interview prep with curated ML system design scenarios"
+        />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      {/* Gradient Background with Title */}
-      <div 
-        className="min-h-screen relative flex flex-col items-center justify-center p-6"
-        style={{
-          background: 'linear-gradient(to bottom, #8b5cf6, #7c3aed, #6d28d9)'
-        }}
-      >
-             {/* Background Title */}
-             <div className="absolute top-16 left-1/2 transform -translate-x-1/2 text-center z-0">
-               <div className="flex items-center justify-center mb-4">
-                 <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center mr-4">
-                   <svg className="w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
-                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-                   </svg>
-                 </div>
-                 <h1 className="text-3xl font-bold text-white">
-                   Machine Learning System Design Learning
-                 </h1>
-               </div>
-               <p className="text-lg text-white max-w-2xl mx-auto">
-                  Select a company and topic to learn machine learning system design
-               </p>
-        </div>
-
-             {/* Main Content Area */}
-             <div className="relative z-10 w-full max-w-4xl mt-48">
-               <div className="space-y-5">
-                 {/* Top Row: Company and Topic Selection */}
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            
-            {/* Company Selection Card */}
-            <div className="bg-white rounded-2xl shadow-lg p-5">
-              <div className="flex items-center mb-4">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                </div>
-                     <h2 className="text-lg font-semibold text-gray-800">Select Company</h2>
-              </div>
-              <hr className="border-gray-200 mb-4" />
-              <select
-                value={selectedCompany}
-                onChange={(e) => handleCompanyChange(e.target.value)}
-                disabled={apiLoading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white text-gray-700"
-              >
-                <option value="" disabled>
-                  {apiLoading ? 'Loading companies...' : 'Please select company...'}
-                </option>
-                {companies.map((company) => (
-                  <option key={company} value={company}>
-                    {company}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-                 {/* Topic Selection Card */}
-                 <div className="bg-white rounded-2xl shadow-lg p-5">
-              <div className="flex items-center mb-4">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                     <h2 className="text-lg font-semibold text-gray-800">Select ML Topic</h2>
-              </div>
-              <hr className="border-gray-200 mb-4" />
-              <select
-                value={selectedTopic}
-                onChange={(e) => handleTopicChange(e.target.value)}
-                disabled={!selectedCompany || apiLoading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors disabled:bg-gray-50 disabled:text-gray-500"
-              >
-                <option value="" disabled>
-                  {!selectedCompany 
-                    ? 'Please select company first...' 
-                    : apiLoading 
-                      ? 'Loading topics...' 
-                      : 'Please select topic...'
-                  }
-                </option>
-                {topics.map((topic) => (
-                  <option key={topic} value={topic}>
-                    {topic}
-                  </option>
-                ))}
-              </select>
-                 </div>
-                 </div>
-
-                 {/* Bottom Row: Selected Information */}
-                 <div className="flex justify-center">
-                   <div className="bg-white rounded-2xl shadow-lg p-4 w-full max-w-4xl">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-semibold text-gray-800">Selected</h3>
+      {stage === 'intro' && (
+        <section className="relative flex min-h-screen flex-col justify-center overflow-hidden bg-gradient-to-br from-indigo-900 via-slate-950 to-slate-900 px-6 py-16 text-white">
+          <div className="mx-auto flex w-full max-w-5xl flex-col gap-10">
+            <header className="space-y-6">
+              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-4 py-1 text-sm font-medium uppercase tracking-wide text-indigo-200">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" aria-hidden />
+                Guided session
+              </span>
+              <h1 className="text-4xl font-semibold leading-tight sm:text-5xl">
+                Master ML system design with interview-grade scenarios
+              </h1>
+              <p className="max-w-2xl text-lg text-indigo-100">
+                Preview the experience, pick the scenario that matches your next interview, and step into a structured practice session with real questions used by leading teams.
+              </p>
+              <div className="flex flex-wrap gap-4">
                 <button
-                  onClick={clearSelection}
-                  className="flex items-center px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium"
+                  type="button"
+                  onClick={handleStartSession}
+                  className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-base font-semibold text-slate-900 shadow-lg shadow-indigo-500/30 transition hover:-translate-y-0.5 hover:bg-indigo-50"
                 >
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  Clear Selection
+                  Start session
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsPickerOpen(true)}
+                  className="inline-flex items-center justify-center rounded-full border border-white/30 px-6 py-3 text-base font-semibold text-white transition hover:border-white hover:bg-white/10"
+                >
+                  Browse scenarios
                 </button>
               </div>
-              <hr className="border-gray-200 mb-3" />
+            </header>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Company:</p>
-                  <p className="text-lg font-semibold text-gray-800">
-                    {selectedCompany || 'Not selected'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Topic:</p>
-                  <p className="text-lg font-semibold text-gray-800">
-                    {selectedTopic || 'Not selected'}
-                  </p>
+            <ScenarioPreview scenario={selectedScenario} variant="hero" />
+          </div>
+        </section>
+      )}
+
+      {stage === 'session' && (
+        <section className="min-h-screen bg-slate-950 px-6 py-16 text-white">
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 lg:flex-row">
+            <div className="lg:w-5/12 lg:max-w-sm">
+              <ScenarioPreview scenario={selectedScenario} variant="panel" />
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsPickerOpen(true)}
+                  className="inline-flex items-center justify-center rounded-full border border-indigo-400/40 px-5 py-2 text-sm font-semibold text-indigo-200 transition hover:border-indigo-300 hover:text-white"
+                >
+                  Change scenario
+                </button>
+                <button
+                  type="button"
+                  onClick={openSummary}
+                  className="inline-flex items-center justify-center rounded-full border border-white/20 px-5 py-2 text-sm font-semibold text-slate-200 transition hover:border-white hover:text-white"
+                >
+                  View session summary
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1">
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl shadow-indigo-950/40 backdrop-blur">
+                <header className="flex flex-col gap-3 border-b border-white/10 pb-6 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-sm uppercase tracking-widest text-indigo-200">Session prompt</p>
+                    <h2 className="text-2xl font-semibold text-white">
+                      {question?.title || selectedScenario?.title}
+                    </h2>
+                  </div>
+                  {apiLoading && (
+                    <span className="inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-1 text-xs font-medium text-indigo-100">
+                      <span className="h-2 w-2 animate-pulse rounded-full bg-indigo-300" aria-hidden />
+                      Loading content…
+                    </span>
+                  )}
+                </header>
+
+                <div className="prose prose-invert mt-6 max-w-none text-indigo-100">
+                  {question ? (
+                    <ReactMarkdown>{question.content}</ReactMarkdown>
+                  ) : (
+                    <p className="text-base leading-relaxed text-indigo-100/80">
+                      We are generating a detailed prompt and walkthrough for this scenario. Use the overview on the left to structure your discussion, or pick another scenario to explore a different challenge.
+                    </p>
+                  )}
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+      )}
 
-              {/* Question Content Display */}
-              {selectedCompany && selectedTopic && question && (
-                <div className="mt-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-lg font-semibold text-gray-800">📘 {question.title}</h4>
-                  </div>
+      {stage === 'summary' && (
+        <section className="min-h-screen bg-slate-950 px-6 py-24 text-white">
+          <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
+            <h2 className="text-4xl font-semibold">Session summary</h2>
+            <p className="mt-4 max-w-2xl text-lg text-indigo-100">
+              We&apos;re building a reflective summary that captures your decisions, trade-offs, and follow-up actions. For now, you can jump back into the session or explore a new scenario.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+              <button
+                type="button"
+                onClick={() => setStage('session')}
+                className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-base font-semibold text-slate-900 shadow-lg shadow-indigo-500/30 transition hover:-translate-y-0.5 hover:bg-indigo-50"
+              >
+                Return to session
+              </button>
+              <button
+                type="button"
+                onClick={restartIntro}
+                className="inline-flex items-center justify-center rounded-full border border-white/30 px-6 py-3 text-base font-semibold text-white transition hover:border-white hover:bg-white/10"
+              >
+                Choose another scenario
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
 
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden p-6">
-                    <div className="markdown-content">
-                      <ReactMarkdown>{question.content}</ReactMarkdown>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Show message when no question is available */}
-              {selectedCompany && selectedTopic && !question && !apiLoading && (
-                <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-700">No question content found for this topic.</p>
-                </div>
-              )}
-                   </div>
-                 </div>
-               </div>
-             </div>
-
-           </div>
-         </>
-       );
-     }
+      <ScenarioPicker
+        open={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        scenarios={SCENARIO_TEMPLATES}
+        onSelect={handleScenarioSelect}
+        selectedScenarioId={selectedScenarioId}
+      />
+    </>
+  );
+}
