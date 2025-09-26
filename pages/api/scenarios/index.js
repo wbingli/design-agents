@@ -1,4 +1,4 @@
-import { loadScenarioManifest, getDefaultScenario } from '../../../../lib/scenarios';
+import { loadScenarioManifest, getDefaultScenario } from '../../../lib/scenarios';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {

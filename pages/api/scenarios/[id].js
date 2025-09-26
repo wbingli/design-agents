@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { findScenarioById } from '../../../../lib/scenarios';
+import { findScenarioById } from '../../../lib/scenarios';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
