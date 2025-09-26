@@ -1,0 +1,12 @@
+{
+  "scenarios": [
+    {
+      "id": "meta-news-feed",
+      "companyLabel": "Meta",
+      "topicLabel": "News Feed",
+      "promptPath": "content/Meta/News-Feed/Design-a-News-Feed-ML-Ranking-System.md",
+      "segmentDurations": [600, 900, 900, 600, 600],
+      "default": true
+    }
+  ]
+}
