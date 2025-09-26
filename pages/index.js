@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import ReactMarkdown from 'react-markdown';
 
 export default function Home() {
   const [companies, setCompanies] = useState([]);
@@ -8,7 +9,7 @@ export default function Home() {
   const [selectedTopic, setSelectedTopic] = useState('');
   const [loading, setLoading] = useState(false);
   const [apiLoading, setApiLoading] = useState(false);
-  const [pdfFiles, setPdfFiles] = useState([]);
+  const [question, setQuestion] = useState(null);
 
   // Fetch companies from API
   useEffect(() => {
@@ -55,18 +56,19 @@ export default function Home() {
   };
 
   // Fetch PDFs when both company and topic are selected
-  const fetchPDFs = async (company, topic) => {
+  const fetchQuestion = async (company, topic) => {
     try {
       setApiLoading(true);
       const response = await fetch(`/api/pdf-files?company=${encodeURIComponent(company)}&topic=${encodeURIComponent(topic)}`);
       if (response.ok) {
         const data = await response.json();
-        const pdfs = data.pdfs || [];
-        setPdfFiles(pdfs);
+        setQuestion(data.question || null);
+      } else {
+        setQuestion(null);
       }
     } catch (error) {
-      console.error('Error fetching PDFs:', error);
-      setPdfFiles([]);
+      console.error('Error fetching question content:', error);
+      setQuestion(null);
     } finally {
       setApiLoading(false);
     }
@@ -75,6 +77,7 @@ export default function Home() {
   const handleCompanyChange = (company) => {
     setSelectedCompany(company);
     setSelectedTopic('');
+    setQuestion(null);
     if (company) {
       fetchTopics(company);
     } else {
@@ -84,8 +87,9 @@ export default function Home() {
 
   const handleTopicChange = (topic) => {
     setSelectedTopic(topic);
+    setQuestion(null);
     if (selectedCompany && topic) {
-      fetchPDFs(selectedCompany, topic);
+      fetchQuestion(selectedCompany, topic);
     }
   };
 
@@ -93,20 +97,7 @@ export default function Home() {
     setSelectedCompany('');
     setSelectedTopic('');
     setTopics([]);
-    setPdfFiles([]);
-  };
-
-  const viewPDF = (pdfUrl) => {
-    window.open(pdfUrl, '_blank');
-  };
-
-  const downloadPDF = (pdfUrl, filename) => {
-    const link = document.createElement('a');
-    link.href = pdfUrl;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    setQuestion(null);
   };
 
 
@@ -243,43 +234,25 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* PDF Content Display */}
-              {selectedCompany && selectedTopic && pdfFiles.length > 0 && (
+              {/* Question Content Display */}
+              {selectedCompany && selectedTopic && question && (
                 <div className="mt-6">
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-lg font-semibold text-gray-800">📄 {pdfFiles[0].name}</h4>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => window.location.reload()}
-                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        Refresh PDF
-                      </button>
-                      <button
-                        onClick={() => downloadPDF(pdfFiles[0].url, pdfFiles[0].name)}
-                        className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
-                      >
-                        Download
-                      </button>
-                    </div>
+                    <h4 className="text-lg font-semibold text-gray-800">📘 {question.title}</h4>
                   </div>
-                  
-                  {/* PDF Viewer */}
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                    <iframe
-                      src={`${pdfFiles[0].url}?t=${Date.now()}`}
-                      className="w-full h-[600px] border-0"
-                      title={pdfFiles[0].name}
-                      key={`${pdfFiles[0].url}-${Date.now()}`}
-                    />
+
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden p-6">
+                    <div className="markdown-content">
+                      <ReactMarkdown>{question.content}</ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Show message when no PDFs are available */}
-              {selectedCompany && selectedTopic && pdfFiles.length === 0 && !apiLoading && (
+              {/* Show message when no question is available */}
+              {selectedCompany && selectedTopic && !question && !apiLoading && (
                 <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-700">No PDF files found for this topic.</p>
+                  <p className="text-sm text-yellow-700">No question content found for this topic.</p>
                 </div>
               )}
                    </div>
