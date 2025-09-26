@@ -1,98 +1,54 @@
-# System Design Explorer
+# ML System Design Interview Companion
 
-An interactive web application for exploring system design patterns used by major tech companies including Meta, Google, Amazon, Netflix, and Uber.
+An end-to-end web experience that guides candidates through a one-hour, machine-learning system design interview. The application replaces the legacy company/topic picker with curated interview scenarios, a Start screen, timed segments, and an OpenAI-powered interviewer.
 
-## Features
+## Product Vision
 
-- 📱 Responsive design that works on desktop and mobile
-- 🏢 System design examples from major tech companies
-- 🔍 Detailed explanations of architecture components
-- ⚡ Interactive topic selection with smooth animations
-- 📚 Educational content covering scalability and performance
+1. **Guided one-hour flow** — Users land on a minimalist Start screen that highlights the default interview scenario (company + topic) while allowing switches before the session begins.
+2. **Structured requirements briefing** — After starting, candidates review the scenario requirements to align on objectives before answering questions.
+3. **Timed interviewer-led segments** — The session is broken into five consecutive blocks with timers, pause controls, and automatic transitions:
+   - Problem formulation (10 minutes)
+   - Data strategy & feature engineering (15 minutes)
+   - Model architecture & training (20 minutes)
+   - Serving & optimization (10 minutes)
+   - Advanced topics & edge cases (5 minutes)
+4. **LLM-driven Q&A** — Each segment hosts a chat panel where an OpenAI-powered interviewer asks probing questions and reacts to candidate answers without streaming for the first iteration.
+5. **Google SSO & persistence** — Users authenticate with Google, enabling transcript storage, session history, and personal default scenario preferences.
+6. **Wrap-up insights** — Upon completion, candidates receive a transcript review with export options and prompts for next steps.
 
-## Team Roadmaps
+## Implementation Roadmap
 
-- [ML Interview Practice Roadmap](docs/ml-interview-roadmap.md) — shared implementation plan covering the vision, phased milestones, and task dependencies for the mock interview experience.
+### 1. Scenario Foundation
+- Create a manifest (e.g., `content/scenarios.json`) describing each interview scenario, default flags, and segment metadata.
+- Replace the company/topic APIs with `/api/scenarios` endpoints that expose the manifest and load prompts by scenario id.
 
-## Companies & Topics
+### 2. Start Screen & Intro Experience
+- Refactor the landing page into staged UI (`intro → session → summary`) with Start CTA, scenario preview, and picker modal.
+- Present scenario requirements immediately after the user starts to establish shared understanding.
 
-### Meta
-- News Feed System
-- Chat System (Messenger)
-- Live Streaming
+### 3. Session Controller & Timer
+- Implement a hook/context that manages segment order, remaining time, pause/resume, and auto-advancement across the five blocks.
+- Surface countdowns, progress indicators, and manual controls within the session layout.
 
-### Google
-- Search Engine
-- YouTube
-- Maps
+### 4. OpenAI Interviewer Integration
+- Define segment-specific prompt templates describing interviewer expectations.
+- Build an API route (e.g., `pages/api/session/messages.js`) that sends chat history and segment context to OpenAI and returns responses.
+- Render a chat interface that tags messages by segment and reflects timer transitions.
 
-### Amazon
-- E-commerce Platform
-- AWS S3
-- Recommendation System
+### 5. Authentication & Persistence
+- Configure NextAuth with Google provider, Prisma adapter, and models for users, interview sessions, and transcripts.
+- Gate the session experience behind authentication and save transcripts/default scenario preferences per user.
 
-### Netflix
-- Video Streaming
-- Content Delivery Network
+### 6. Wrap-up & Settings
+- Deliver a summary stage that shows the transcript, downloadable artifacts, and restart/change-scenario options.
+- Introduce a protected user settings page for managing default scenario selection (with room for future preferences).
 
-### Uber
-- Ride Matching System
-- Surge Pricing
+## Related Documentation
 
-## Getting Started
+- [ML Interview Practice Roadmap](docs/ml-interview-roadmap.md) — detailed milestone breakdown and task dependencies supporting this vision.
 
-Frontend:
-- Simply open `index.html` in your browser to explore system design patterns.
+## Development
 
-Backend (prompt storage & APIs):
-- Requirements: Node >= 18
-- Install deps: `npm install`
-- Start dev server: `npm run dev` (http://localhost:3001)
-- Health check: `GET /api/health`
-- List prompts: `GET /api/prompts`
-- Read prompt: `GET /api/prompts/<name>`
-- Upsert prompt: `POST /api/prompts/<name>` with body `{ "content": "..." }` or raw text
-- Run prompt (stub): `POST /api/run/<name>` with optional `{ "parameters": { ... } }`
-
-## Project Structure
-
-```
-backend/
-  src/
-    server.js           # Express server with prompt APIs
-    routes.js           # Placeholder for future modular routes
-content/                # Companies → Topics → PDF files
-  <Company>/
-    <Topic>/
-      <some.pdf>
-prompts/
-  README.md             # Conventions & API usage
-  example.meta.news-feed.md
-index.html              # Frontend UI
-script.js               # Frontend logic
-styles.css              # Frontend styles
-```
-
-## Deployment
-
-- Frontend can be deployed on static hosting (Vercel, Netlify, GitHub Pages).
-- Backend can be deployed on any Node-compatible host (Render, Fly.io, Vercel serverless, etc.).
-
-## Technologies Used
-
-- HTML5
-- CSS3
-- Vanilla JavaScript
-- Node.js + Express (backend)
-
-## Content management (companies, topics, PDFs)
-
-Place your ML system design PDFs under `content/<Company>/<Topic>/*.pdf`.
-
-- List companies: `GET /api/companies`
-- List topics: `GET /api/companies/:company/topics`
-- Stream topic PDF: `GET /api/companies/:company/topics/:topic/pdf`
-
-Frontend automatically populates dropdowns from these endpoints and displays the PDF.
-- Responsive Design# Clean installation completed - webpack issues resolved
-# Comprehensive local testing completed - all systems verified
+- Install dependencies: `npm install`
+- Run the Next.js app: `npm run dev`
+- Environment requirements: Node.js ≥ 18, `OPENAI_API_KEY`, Google OAuth credentials.
