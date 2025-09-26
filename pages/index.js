@@ -1,8 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Head from 'next/head';
 import ReactMarkdown from 'react-markdown';
 import ScenarioPreview from '../components/session/ScenarioPreview';
 import ScenarioPicker from '../components/session/ScenarioPicker';
+import SegmentTimeline from '../components/session/SegmentTimeline';
+import { SessionController } from '../lib/session/controller';
+
+const SEGMENT_LABELS = [
+  'Warm-up & Goals',
+  'System Design Planning',
+  'Deep Dive & Data Flows',
+  'Trade-offs & Scaling',
+  'Wrap-up & Coaching',
+];
 
 export default function Home() {
   const [stage, setStage] = useState('intro');
@@ -16,6 +26,83 @@ export default function Home() {
   const [isPromptLoading, setIsPromptLoading] = useState(false);
   const [manifestRequestId, setManifestRequestId] = useState(0);
   const [promptRequestId, setPromptRequestId] = useState(0);
+  const controllerRef = useRef(null);
+  const [sessionStatus, setSessionStatus] = useState('idle');
+  const [segmentState, setSegmentState] = useState([]);
+  const [activeSegmentIndex, setActiveSegmentIndex] = useState(null);
+  const [activeRemainingMs, setActiveRemainingMs] = useState(null);
+
+  const refreshSegments = useCallback(() => {
+    const controller = controllerRef.current;
+    if (!controller) {
+      setSegmentState([]);
+      setActiveSegmentIndex(null);
+      setActiveRemainingMs(null);
+      return;
+    }
+
+    const segments = controller.segments;
+    setSegmentState(segments);
+    const currentIndex = segments.findIndex((segment) => segment.status === 'in-progress');
+    if (currentIndex !== -1) {
+      setActiveSegmentIndex(currentIndex);
+      const activeSegment = segments[currentIndex];
+      if (typeof activeSegment.plannedDurationMs === 'number') {
+        const remaining = Math.max(
+          activeSegment.plannedDurationMs - (activeSegment.elapsedMs || 0),
+          0
+        );
+        setActiveRemainingMs(remaining);
+      } else {
+        setActiveRemainingMs(null);
+      }
+    } else {
+      setActiveSegmentIndex(null);
+      setActiveRemainingMs(null);
+    }
+  }, []);
+
+  const teardownController = useCallback(() => {
+    if (controllerRef.current) {
+      controllerRef.current.removeAllListeners();
+      controllerRef.current = null;
+    }
+    setSessionStatus('idle');
+    setSegmentState([]);
+    setActiveSegmentIndex(null);
+    setActiveRemainingMs(null);
+  }, []);
+
+  const buildSegmentsForScenario = useCallback((scenario) => {
+    if (!scenario) {
+      return SEGMENT_LABELS.map((label, index) => ({
+        id: `segment-${index + 1}`,
+        name: label,
+      }));
+    }
+
+    const durations = Array.isArray(scenario.segmentDurations) ? scenario.segmentDurations : [];
+    if (durations.length > 0) {
+      return durations.map((durationSeconds, index) => ({
+        id: `${scenario.id || 'segment'}-${index + 1}`,
+        name: SEGMENT_LABELS[index] || `Segment ${index + 1}`,
+        durationSeconds,
+      }));
+    }
+
+    return SEGMENT_LABELS.map((label, index) => ({
+      id: `${scenario.id || 'segment'}-${index + 1}`,
+      name: label,
+      durationSeconds: null,
+    }));
+  }, []);
+
+  useEffect(() => () => {
+    if (controllerRef.current) {
+      controllerRef.current.removeAllListeners();
+      controllerRef.current = null;
+    }
+  }, []);
 
   const selectedScenario = useMemo(
     () => scenarios.find((scenario) => scenario.id === selectedScenarioId) || null,
@@ -115,12 +202,86 @@ export default function Home() {
     };
   }, [selectedScenarioId, promptRequestId]);
 
-  const handleStartSession = () => {
+  useEffect(() => {
+    if (sessionStatus !== 'running') {
+      if (sessionStatus === 'paused') {
+        refreshSegments();
+      }
+      return () => {};
+    }
+
+    const interval = setInterval(() => {
+      refreshSegments();
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [sessionStatus, refreshSegments]);
+
+  const handleStartSession = useCallback(() => {
     if (!selectedScenarioId) {
       return;
     }
+
+    const scenario = scenarioDetails || selectedScenario;
+    if (!scenario) {
+      return;
+    }
+
+    if (controllerRef.current) {
+      controllerRef.current.removeAllListeners();
+      controllerRef.current = null;
+    }
+
+    const segments = buildSegmentsForScenario(scenario);
+    const controller = new SessionController({
+      sessionId: `${scenario.id || 'session'}-${Date.now()}`,
+      scenarioId: scenario.id || null,
+      segments,
+      metadata: {
+        scenarioLabel: `${scenario.companyLabel ?? ''} ${scenario.topicLabel ?? ''}`.trim() || null,
+        title: scenario.title,
+      },
+    });
+
+    controller.on('segment:start', () => {
+      setSessionStatus('running');
+      refreshSegments();
+    });
+
+    controller.on('segment:end', () => {
+      refreshSegments();
+    });
+
+    controller.on('session:paused', () => {
+      setSessionStatus('paused');
+      refreshSegments();
+    });
+
+    controller.on('session:resumed', () => {
+      setSessionStatus('running');
+      refreshSegments();
+    });
+
+    controller.on('session:finished', () => {
+      setSessionStatus('completed');
+      refreshSegments();
+    });
+
+    controllerRef.current = controller;
     setStage('session');
-  };
+    setSessionStatus('running');
+    refreshSegments();
+    controller.begin();
+    controller.advance();
+  }, [
+    selectedScenarioId,
+    scenarioDetails,
+    selectedScenario,
+    buildSegmentsForScenario,
+    refreshSegments,
+  ]);
 
   const handleScenarioSelect = (scenario) => {
     if (!scenario?.id) {
@@ -130,11 +291,38 @@ export default function Home() {
     setIsPickerOpen(false);
   };
 
+  const handleTogglePause = useCallback(() => {
+    const controller = controllerRef.current;
+    if (!controller) {
+      return;
+    }
+    if (sessionStatus === 'paused') {
+      controller.resume();
+    } else if (sessionStatus === 'running') {
+      controller.pause();
+    }
+  }, [sessionStatus]);
+
+  const handleAdvanceSegment = useCallback(() => {
+    const controller = controllerRef.current;
+    if (!controller) {
+      return;
+    }
+    if (sessionStatus === 'paused') {
+      controller.resume();
+    }
+    controller.completeCurrentSegment();
+  }, [sessionStatus]);
+
   const restartIntro = () => {
+    teardownController();
     setStage('intro');
   };
 
   const openSummary = () => {
+    if (sessionStatus === 'running') {
+      controllerRef.current?.pause();
+    }
     setStage('summary');
   };
 
@@ -258,6 +446,15 @@ export default function Home() {
                     </span>
                   )}
                 </header>
+
+                <SegmentTimeline
+                  segments={segmentState}
+                  activeIndex={activeSegmentIndex}
+                  activeRemainingMs={activeRemainingMs}
+                  status={sessionStatus}
+                  onTogglePause={handleTogglePause}
+                  onAdvance={handleAdvanceSegment}
+                />
 
                 <div className="prose prose-invert mt-6 max-w-none text-indigo-100">
                   {promptError && (
