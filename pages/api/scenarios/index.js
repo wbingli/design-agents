@@ -1,4 +1,4 @@
-import { loadScenarioManifest, getDefaultScenario } from '../../../../lib/scenarios';
+import { loadScenarioManifest } from '../../../lib/scenarios';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -7,14 +7,9 @@ export default async function handler(req, res) {
 
   try {
     const scenarios = await loadScenarioManifest();
-    const defaultScenario = getDefaultScenario(scenarios);
-
-    return res.status(200).json({
-      scenarios,
-      defaultScenario,
-    });
+    return res.status(200).json({ scenarios });
   } catch (error) {
     console.error('Failed to load scenarios manifest:', error);
-    return res.status(500).json({ error: 'Failed to load scenarios manifest.' });
+    return res.status(500).json({ error: 'Failed to load scenarios.' });
   }
 }

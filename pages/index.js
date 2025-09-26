@@ -1,15 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Head from 'next/head';
 import ReactMarkdown from 'react-markdown';
+import useInterviewSession from '../hooks/useInterviewSession';
 
 export default function Home() {
   const [companies, setCompanies] = useState([]);
   const [topics, setTopics] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('');
-  const [loading, setLoading] = useState(false);
   const [apiLoading, setApiLoading] = useState(false);
   const [question, setQuestion] = useState(null);
+  const [scenarios, setScenarios] = useState([]);
+  const [scenariosLoading, setScenariosLoading] = useState(false);
+  const [scenarioError, setScenarioError] = useState(null);
+  const [activeScenario, setActiveScenario] = useState(null);
 
   // Fetch companies from API
   useEffect(() => {
@@ -33,6 +37,29 @@ export default function Home() {
     };
 
     fetchCompanies();
+  }, []);
+
+  useEffect(() => {
+    const fetchScenarios = async () => {
+      try {
+        setScenariosLoading(true);
+        const response = await fetch('/api/scenarios');
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+        const data = await response.json();
+        setScenarios(Array.isArray(data.scenarios) ? data.scenarios : []);
+        setScenarioError(null);
+      } catch (error) {
+        console.error('Error fetching scenario manifest:', error);
+        setScenarios([]);
+        setScenarioError('Unable to load interview segments right now.');
+      } finally {
+        setScenariosLoading(false);
+      }
+    };
+
+    fetchScenarios();
   }, []);
 
   // Fetch ML topics from API when company is selected
@@ -74,6 +101,24 @@ export default function Home() {
     }
   };
 
+  useEffect(() => {
+    if (!selectedCompany || !selectedTopic) {
+      setActiveScenario(null);
+      return;
+    }
+
+    const normalizedCompany = selectedCompany.toLowerCase();
+    const normalizedTopic = selectedTopic.toLowerCase();
+
+    const match = scenarios.find((scenario) => {
+      const scenarioCompany = (scenario.companyLabel || '').toLowerCase();
+      const scenarioTopic = (scenario.topicLabel || '').toLowerCase();
+      return scenarioCompany === normalizedCompany && scenarioTopic === normalizedTopic;
+    });
+
+    setActiveScenario(match || null);
+  }, [selectedCompany, selectedTopic, scenarios]);
+
   const handleCompanyChange = (company) => {
     setSelectedCompany(company);
     setSelectedTopic('');
@@ -99,6 +144,67 @@ export default function Home() {
     setTopics([]);
     setQuestion(null);
   };
+
+  const segmentNameFallbacks = useMemo(
+    () => [
+      'Kickoff & Clarify',
+      'System Outline',
+      'Deep Dive',
+      'Tradeoffs & Scaling',
+      'Wrap-up',
+    ],
+    []
+  );
+
+  const sessionSegments = useMemo(() => {
+    if (!activeScenario || !Array.isArray(activeScenario.segmentDurations)) {
+      return [];
+    }
+
+    return activeScenario.segmentDurations.map((duration, index) => ({
+      id: `${activeScenario.id || 'segment'}-${index + 1}`,
+      name:
+        (Array.isArray(activeScenario.segmentNames)
+          ? activeScenario.segmentNames[index]
+          : null) ||
+        segmentNameFallbacks[index] ||
+        `Segment ${index + 1}`,
+      duration: Number(duration) || 0,
+    }));
+  }, [activeScenario, segmentNameFallbacks]);
+
+  const {
+    segments: sessionDefinition,
+    currentSegmentIndex,
+    currentSegment,
+    remainingSeconds: sessionRemainingSeconds,
+    isActive: sessionActive,
+    isPaused: sessionPaused,
+    isComplete: sessionComplete,
+    totalElapsedSeconds,
+    totalDurationSeconds,
+    segmentProgress,
+    overallProgress,
+    start: startSession,
+    pause: pauseSession,
+    resume: resumeSession,
+    skip: skipSegment,
+  } = useInterviewSession(sessionSegments);
+
+  const hasNextSegment = currentSegmentIndex < sessionDefinition.length - 1;
+
+  const formatTime = (value) => {
+    const safeValue = Number.isFinite(value) ? value : 0;
+    const totalSeconds = Math.max(0, Math.round(safeValue));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const nextSegment = hasNextSegment ? sessionDefinition[currentSegmentIndex + 1] : null;
+  const segmentProgressPercent = Math.round(segmentProgress * 100);
+  const overallProgressPercent = Math.round(overallProgress * 100);
+  const totalRemainingSeconds = Math.max(totalDurationSeconds - totalElapsedSeconds, 0);
 
 
   return (
@@ -233,6 +339,184 @@ export default function Home() {
                   </p>
                 </div>
               </div>
+
+              {scenarioError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-sm text-red-700 rounded-lg">
+                  {scenarioError}
+                </div>
+              )}
+
+              {scenariosLoading && (
+                <div className="mb-4 p-3 bg-indigo-50 border border-indigo-100 text-sm text-indigo-700 rounded-lg">
+                  Preparing interview segments...
+                </div>
+              )}
+
+              {activeScenario && sessionDefinition.length > 0 && (
+                <div className="mb-6">
+                  <div className="bg-gradient-to-br from-indigo-50 via-white to-purple-50 border border-indigo-100 rounded-2xl p-5 shadow-sm">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500">
+                          Interview Session
+                        </p>
+                        <h4 className="text-xl font-semibold text-indigo-900">
+                          {sessionComplete
+                            ? 'Session complete'
+                            : sessionActive
+                              ? currentSegment?.name || 'In progress'
+                              : 'Ready to start'}
+                        </h4>
+                        <p className="text-sm text-indigo-700 mt-1">
+                          {sessionComplete && 'Great work! Review the prompt or restart to practice again.'}
+                          {!sessionComplete && sessionActive && !sessionPaused && `Segment ${currentSegmentIndex + 1} of ${sessionDefinition.length} · ${formatTime(sessionRemainingSeconds)} remaining`}
+                          {!sessionComplete && sessionActive && sessionPaused && `Paused · ${formatTime(sessionRemainingSeconds)} remaining`}
+                          {!sessionComplete && !sessionActive && `Total session time · ${formatTime(totalDurationSeconds)}`}
+                        </p>
+                        {nextSegment && sessionActive && !sessionComplete && (
+                          <p className="text-xs text-indigo-600 mt-2">
+                            Next up: {nextSegment.name} ({formatTime(nextSegment.duration)})
+                          </p>
+                        )}
+                        {!sessionActive && !sessionComplete && (
+                          <p className="text-xs text-indigo-600 mt-2">
+                            Segments auto-advance as the countdown reaches zero.
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {!sessionActive && !sessionComplete && (
+                          <button
+                            onClick={startSession}
+                            className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold shadow hover:bg-indigo-700 transition-colors"
+                            disabled={sessionDefinition.length === 0}
+                          >
+                            Start Session
+                          </button>
+                        )}
+                        {sessionActive && !sessionPaused && !sessionComplete && (
+                          <button
+                            onClick={pauseSession}
+                            className="px-4 py-2 rounded-lg bg-white text-indigo-700 font-semibold text-sm border border-indigo-200 shadow-sm hover:bg-indigo-50 transition-colors"
+                          >
+                            Pause
+                          </button>
+                        )}
+                        {sessionActive && sessionPaused && !sessionComplete && (
+                          <button
+                            onClick={resumeSession}
+                            className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold shadow hover:bg-indigo-700 transition-colors"
+                          >
+                            Resume
+                          </button>
+                        )}
+                        {sessionComplete && (
+                          <button
+                            onClick={startSession}
+                            className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold shadow hover:bg-indigo-700 transition-colors"
+                          >
+                            Restart Session
+                          </button>
+                        )}
+                        {sessionActive && hasNextSegment && !sessionComplete && (
+                          <button
+                            onClick={skipSegment}
+                            className="px-4 py-2 rounded-lg bg-purple-100 text-purple-700 font-semibold text-sm border border-purple-200 hover:bg-purple-200 transition-colors"
+                          >
+                            Skip Segment
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mt-5 space-y-4">
+                      <div>
+                        <div className="flex justify-between text-xs font-semibold text-indigo-600 uppercase tracking-wide">
+                          <span>Segment Progress</span>
+                          <span>{segmentProgressPercent}%</span>
+                        </div>
+                        <div className="mt-1 h-2 w-full rounded-full bg-indigo-100 overflow-hidden">
+                          <div
+                            className="h-full bg-indigo-500 transition-all duration-300"
+                            style={{ width: `${Math.min(100, Math.max(0, segmentProgressPercent))}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-xs font-semibold text-purple-600 uppercase tracking-wide">
+                          <span>Overall Progress</span>
+                          <span>{overallProgressPercent}%</span>
+                        </div>
+                        <div className="mt-1 h-2 w-full rounded-full bg-purple-100 overflow-hidden">
+                          <div
+                            className="h-full bg-purple-500 transition-all duration-300"
+                            style={{ width: `${Math.min(100, Math.max(0, overallProgressPercent))}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-indigo-700">
+                        <span className="inline-flex items-center rounded-full bg-white border border-indigo-100 px-3 py-1 font-medium">
+                          Remaining · {formatTime(totalRemainingSeconds)}
+                        </span>
+                        <span className="inline-flex items-center rounded-full bg-white border border-indigo-100 px-3 py-1 font-medium">
+                          Total · {formatTime(totalDurationSeconds)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                      {sessionDefinition.map((segment, index) => {
+                        const isCurrent = index === currentSegmentIndex && sessionActive && !sessionComplete;
+                        const isDone = index < currentSegmentIndex || sessionComplete;
+                        return (
+                          <div
+                            key={segment.id}
+                            className={`rounded-xl border p-4 transition-colors ${
+                              isCurrent
+                                ? 'border-indigo-400 bg-white shadow'
+                                : isDone
+                                  ? 'border-green-200 bg-green-50'
+                                  : 'border-gray-200 bg-white'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm font-semibold text-gray-800">{segment.name}</p>
+                              <span className="text-xs font-medium text-gray-500">{formatTime(segment.duration)}</span>
+                            </div>
+                            <div className="mt-2 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                              <div
+                                className={`h-full ${
+                                  isCurrent
+                                    ? 'bg-indigo-500'
+                                    : isDone
+                                      ? 'bg-green-400'
+                                      : 'bg-gray-300'
+                                }`}
+                                style={{
+                                  width:
+                                    isDone
+                                      ? '100%'
+                                      : isCurrent
+                                        ? `${Math.min(100, Math.max(0, segmentProgressPercent))}%`
+                                        : '0%',
+                                }}
+                              />
+                            </div>
+                            {isCurrent && sessionPaused && !sessionComplete && (
+                              <p className="mt-2 text-xs text-indigo-600">Paused</p>
+                            )}
+                            {isDone && !isCurrent && (
+                              <p className="mt-2 text-xs text-green-600">Completed</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Question Content Display */}
               {selectedCompany && selectedTopic && question && (
